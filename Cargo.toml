@@ -1,0 +1,12 @@
+[package]
+name = "cometd-client"
+version = "0.0.1"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/BratSinot/cometd-client"
+homepage = "https://github.com/BratSinot/cometd-client"
+description = "Client for LongPolling CometD connections"
+categories = ["web-programming"]
+keywords = ["http", "cometd"]
+
+[dependencies]
