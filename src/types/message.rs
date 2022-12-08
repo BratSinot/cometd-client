@@ -18,10 +18,11 @@ pub(crate) struct Message {
     pub(crate) data: Option<JsonValue>,
     pub(crate) successful: Option<bool>,
     pub(crate) error: Option<String>,
-    pub(crate) advice: Option<Advice>,
+    // TODO: try to parse on errors
+    //pub(crate) advice: Option<Advice>,
 }
 
-#[skip_serializing_none]
+/*#[skip_serializing_none]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub(crate) struct Advice {
     interval: Option<u64>,
@@ -29,18 +30,11 @@ pub(crate) struct Advice {
     timeout: Option<u64>,
 }
 
-impl Advice {
-    #[inline(always)]
-    pub(crate) fn reconnect(&self) -> Option<Reconnect> {
-        self.reconnect
-    }
-}
-
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum Reconnect {
+pub(crate) enum Reconnect {
     Retry,
     Handshake,
     #[default]
     None,
-}
+}*/
