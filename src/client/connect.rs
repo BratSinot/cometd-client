@@ -1,14 +1,14 @@
-use crate::types::{Advice, Message};
 use crate::{
-    consts::APPLICATION_JSON, types::InnerError, CometdClient, CometdError, CometdResult,
-    ConnectResponse, Data, RequestBuilderExt,
+    consts::APPLICATION_JSON,
+    types::{InnerError, Message},
+    CometdClient, CometdError, CometdResult, Data, RequestBuilderExt,
 };
 use hyper::{header::CONTENT_TYPE, Method, Request};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 
 impl CometdClient {
-    pub async fn connect<Msg>(&self) -> CometdResult<ConnectResponse<Msg>>
+    pub async fn connect<Msg>(&self) -> CometdResult<Vec<Data<Msg>>>
     where
         Msg: DeserializeOwned,
     {
@@ -58,10 +58,7 @@ impl CometdClient {
             .position(|message| message.id.as_ref() == Some(&id))
         {
             let Message {
-                successful,
-                error,
-                advice,
-                ..
+                successful, error, ..
             } = messages.remove(position);
 
             if successful == Some(false) {
@@ -69,11 +66,6 @@ impl CometdClient {
                     error.unwrap_or_default().into(),
                 )))
             } else {
-                let reconnect = advice
-                    .as_ref()
-                    .and_then(Advice::reconnect)
-                    .unwrap_or_default();
-
                 let data = messages
                     .into_iter()
                     .map(|message| {
@@ -87,7 +79,7 @@ impl CometdClient {
                     })
                     .collect::<CometdResult<Vec<_>>>()?;
 
-                Ok(ConnectResponse { reconnect, data })
+                Ok(data)
             }
         } else {
             Err(CometdError::connect_error(InnerError::WrongResponse(
