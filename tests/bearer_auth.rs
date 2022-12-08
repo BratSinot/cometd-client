@@ -6,6 +6,6 @@ fn test_basic_auth() {
 
     assert_eq!(
         bearer.get_authorization_header(),
-        [("authorization", "Bearer Vasya")]
+        [("authorization", "Bearer Vasya".into())]
     );
 }

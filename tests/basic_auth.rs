@@ -7,10 +7,10 @@ fn test_basic_auth() {
 
     assert_eq!(
         basic0.get_authorization_header(),
-        [("authorization", "Basic VmFzeWE6")]
+        [("authorization", "Basic VmFzeWE6".into())]
     );
     assert_eq!(
         basic1.get_authorization_header(),
-        [("authorization", "Basic VmFzeWE6UGV0eWE=")]
+        [("authorization", "Basic VmFzeWE6UGV0eWE=".into())]
     );
 }
