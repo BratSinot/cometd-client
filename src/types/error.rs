@@ -2,12 +2,14 @@ use hyper::http::uri::InvalidUri;
 use std::{borrow::Cow, error::Error};
 use url::ParseError as UrlParseError;
 
+#[allow(missing_docs)]
 pub type CometdResult<T> = Result<T, CometdError>;
 
+#[allow(missing_docs)]
 #[derive(Debug, thiserror::Error)]
 pub enum CometdError {
-    #[error("Base url wasn't set in builder.")]
-    MissingBaseUrl,
+    #[error("Endpoint wasn't set in builder.")]
+    MissingEndpoint,
     #[error("Url parse error: `{0}`.")]
     InvalidUrl(#[from] UrlParseError),
     #[error("Url parse error: `{0}`.")]

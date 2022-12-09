@@ -5,9 +5,10 @@ use crate::{
 use hyper::Client;
 use url::Url;
 
+/// A builder to construct `CometdClient`.
 #[derive(Debug, Default)]
 pub struct CometdClientBuilder {
-    base_url: Option<&'static str>,
+    endpoint: Option<&'static str>,
     handshake_base_path: &'static str,
     subscribe_base_path: &'static str,
     connect_base_path: &'static str,
@@ -23,10 +24,22 @@ impl CometdClientBuilder {
         Self::default()
     }
 
+    /// Return a `CometdClient`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let client = CometdClientBuilder::new()
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
     #[inline(always)]
     pub fn build(self) -> CometdResult<CometdClient> {
         let Self {
-            base_url,
+            endpoint,
             handshake_base_path,
             subscribe_base_path,
             connect_base_path,
@@ -35,7 +48,7 @@ impl CometdClientBuilder {
             interval_ms,
         } = self;
 
-        let base_url = Url::parse(base_url.ok_or(CometdError::MissingBaseUrl)?)?;
+        let base_url = Url::parse(endpoint.ok_or(CometdError::MissingEndpoint)?)?;
         let handshake_endpoint =
             String::from(base_url.join(handshake_base_path)?.join("handshake")?).try_into()?;
         let subscribe_endpoint = String::from(base_url.join(subscribe_base_path)?).try_into()?;
@@ -59,22 +72,39 @@ impl CometdClientBuilder {
         })
     }
 
+    /// Set cometd server endpoint.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let app = CometdClientBuilder::new()
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
     #[inline(always)]
-    pub fn base_url(self, url: &'static str) -> Self {
+    pub fn endpoint(self, url: &'static str) -> Self {
         Self {
-            base_url: Some(url),
+            endpoint: Some(url),
             ..self
         }
     }
 
-    #[inline(always)]
-    pub fn subscribe_base_path(self, url: &'static str) -> Self {
-        Self {
-            subscribe_base_path: url,
-            ..self
-        }
-    }
-
+    /// Set cometd server handshake url path.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let app = CometdClientBuilder::new()
+    ///     .handshake_base_path("hand/") // http://[::1]:1025/notifications/hand/handshake
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
     #[inline(always)]
     pub fn handshake_base_path(self, url: &'static str) -> Self {
         Self {
@@ -83,6 +113,40 @@ impl CometdClientBuilder {
         }
     }
 
+    /// Set cometd server subscribe url path.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let app = CometdClientBuilder::new()
+    ///     .subscribe_base_path("sub/") // http://[::1]:1025/notifications/sub/
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
+    #[inline(always)]
+    pub fn subscribe_base_path(self, url: &'static str) -> Self {
+        Self {
+            subscribe_base_path: url,
+            ..self
+        }
+    }
+
+    /// Set cometd server connect url path.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let app = CometdClientBuilder::new()
+    ///     .connect_base_path("con/") // http://[::1]:1025/notifications/con/connect
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
     #[inline(always)]
     pub fn connect_base_path(self, url: &'static str) -> Self {
         Self {
@@ -91,6 +155,19 @@ impl CometdClientBuilder {
         }
     }
 
+    /// Set cometd server disconnect url path.
+    ///
+    /// # Example
+    /// ```rust
+    /// use cometd_client::CometdClientBuilder;
+    ///
+    /// # let _ = || -> cometd_client::CometdResult<_> {
+    /// let app = CometdClientBuilder::new()
+    ///     .connect_base_path("discon/") // http://[::1]:1025/notifications/discon/disconnect
+    ///     .endpoint("http://[::1]:1025/notifications/")
+    ///     .build()?;
+    /// # Ok(()) };
+    /// ```
     #[inline(always)]
     pub fn disconnect_base_path(self, url: &'static str) -> Self {
         Self {
@@ -99,6 +176,7 @@ impl CometdClientBuilder {
         }
     }
 
+    /// Set `timeout` option in handshake request.
     #[inline(always)]
     pub fn timeout_ms(self, timeout_ms: u64) -> Self {
         Self {
@@ -107,6 +185,7 @@ impl CometdClientBuilder {
         }
     }
 
+    /// Set `interval` option in handshake request.
     #[inline(always)]
     pub fn interval_ms(self, interval_ms: u64) -> Self {
         Self {

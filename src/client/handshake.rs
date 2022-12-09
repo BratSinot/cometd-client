@@ -7,6 +7,18 @@ use hyper::{header::CONTENT_TYPE, Method, Request};
 use serde_json::json;
 
 impl CometdClient {
+    /// Send handshake request.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+    ///
+    /// # async {
+    ///     client.handshake().await?;
+    /// #   CometdResult::Ok(())
+    /// # };
+    /// ```
     pub async fn handshake(&self) -> CometdResult<()> {
         let request_builder = Request::builder()
             .uri(&self.handshake_endpoint)
