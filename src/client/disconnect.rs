@@ -6,6 +6,18 @@ use hyper::{header::CONTENT_TYPE, Method, Request, StatusCode};
 use serde_json::json;
 
 impl CometdClient {
+    /// Send disconnect request.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+    ///
+    /// # async {
+    ///     client.disconnect().await?;
+    /// #   CometdResult::Ok(())
+    /// # };
+    /// ```
     pub async fn disconnect(&self) -> CometdResult<()> {
         let client_id = self
             .client_id

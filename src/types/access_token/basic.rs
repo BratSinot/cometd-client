@@ -5,10 +5,21 @@ use std::io::Write;
 
 const BASIC: &[u8] = b"Basic ";
 
+/// `Basic` can be used as `AccessToken` for basic authorization ('authorization: Basic VmFzeWE6UGV0eWE=').
+///
+/// # Example
+/// ```rust
+/// # use cometd_client::{Basic, CometdClientBuilder};
+/// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+///
+///     let access_token = Basic::create("username", Some("password")).unwrap();
+///     client.update_access_token(access_token);
+/// ```
 #[derive(Debug)]
 pub struct Basic([(&'static str, Box<str>); 1]);
 
 impl Basic {
+    /// Create `Basic` access token.
     #[inline]
     pub fn create(username: &str, password: Option<&str>) -> CometdResult<Self> {
         let capacity = calculate_padded_base64_len(BASIC.len())

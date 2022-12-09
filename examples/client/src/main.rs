@@ -4,7 +4,7 @@ use serde_json::Value as JsonValue;
 #[tokio::main]
 async fn main() {
     let client = CometdClientBuilder::new()
-        .base_url("http://[::1]:1025/notifications/")
+        .endpoint("http://[::1]:1025/notifications/")
         .build()
         .unwrap();
 
