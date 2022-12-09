@@ -13,6 +13,7 @@ use hyper::{
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+/// A cometd Client.
 #[derive(Debug)]
 pub struct CometdClient {
     handshake_endpoint: Uri,
@@ -30,13 +31,22 @@ pub struct CometdClient {
 }
 
 impl CometdClient {
+    /// Method for update access token.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use cometd_client::{Basic, CometdClientBuilder};
+    /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+    ///
+    ///     let access_token = Basic::create("username", Some("password")).unwrap();
+    ///     client.update_access_token(access_token);
+    /// ```
     #[inline]
     pub async fn update_access_token<AT>(&self, access_token: AT)
     where
-        AT: AccessToken,
-        Box<dyn AccessToken>: From<AT>,
+        AT: AccessToken + 'static,
     {
-        self.access_token.store_value(access_token.into());
+        self.access_token.store_value(Box::new(access_token));
     }
 
     #[inline(always)]

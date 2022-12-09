@@ -8,6 +8,18 @@ use serde::Serialize;
 use serde_json::json;
 
 impl CometdClient {
+    /// Send handshake request.
+    ///
+    /// # Example
+    /// ```rust
+    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+    ///
+    /// # async {
+    ///     client.subscribe(&["/topic0", "/topic1"]).await?;
+    /// #   CometdResult::Ok(())
+    /// # };
+    /// ```
     pub async fn subscribe<Item>(&self, subscriptions: &[Item]) -> CometdResult<()>
     where
         Item: Serialize,
