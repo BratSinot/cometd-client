@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::skip_serializing_none;
 
+/// Contains channel name of message received from cometd server.
+#[derive(Debug)]
+pub struct Data<Msg> {
+    /// Channel name from which was received message.
+    pub channel: Option<String>,
+    /// Received message.
+    pub message: Option<Msg>,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub(crate) struct Message {

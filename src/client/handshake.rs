@@ -1,6 +1,6 @@
 use crate::{
-    types::{InnerError, Message},
-    ArcSwapOptionExt, CometdClient, CometdError, CometdResult,
+    types::{CometdError, CometdResult, InnerError, Message},
+    ArcSwapOptionExt, CometdClient,
 };
 use serde_json::json;
 
@@ -9,7 +9,7 @@ impl CometdClient {
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
     /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
     ///
     /// # async {

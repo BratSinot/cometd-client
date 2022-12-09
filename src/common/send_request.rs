@@ -1,4 +1,7 @@
-use crate::{CometdClient, CometdError, CometdResult};
+use crate::{
+    types::{CometdError, CometdResult},
+    CometdClient,
+};
 use hyper::{body::Bytes, http::request::Builder, Body, Error as HyperError, Response};
 
 impl CometdClient {

@@ -1,6 +1,6 @@
 use crate::{
-    types::{InnerError, Message},
-    CometdClient, CometdError, CometdResult, Data,
+    types::{CometdError, CometdResult, Data, InnerError, Message},
+    CometdClient,
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
@@ -10,7 +10,7 @@ impl CometdClient {
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
     /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
     ///
     /// # async {

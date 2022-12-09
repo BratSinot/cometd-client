@@ -1,4 +1,4 @@
-use crate::{AccessToken, CometdError, CometdResult};
+use crate::types::{AccessToken, CometdError, CometdResult};
 use base64::write::EncoderWriter as Base64Writer;
 use hyper::header::AUTHORIZATION;
 use std::io::Write;
@@ -9,7 +9,7 @@ const BASIC: &[u8] = b"Basic ";
 ///
 /// # Example
 /// ```rust
-/// # use cometd_client::{Basic, CometdClientBuilder};
+/// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
 /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
 ///
 ///     let access_token = Basic::create("username", Some("password")).unwrap();

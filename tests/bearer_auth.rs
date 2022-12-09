@@ -1,4 +1,4 @@
-use cometd_client::{AccessToken, Bearer};
+use cometd_client::types::{access_token::Bearer, AccessToken};
 
 #[test]
 fn test_basic_auth() {

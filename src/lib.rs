@@ -21,7 +21,10 @@ mod client;
 mod common;
 mod consts;
 mod ext;
-mod types;
+
+/// Contains various structs, enums and traits.
+pub mod types;
+
+pub use client::*;
 
 pub(crate) use ext::*;
-pub use {client::*, types::*};
