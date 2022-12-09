@@ -1,7 +1,7 @@
 use crate::{
     consts::APPLICATION_JSON,
     types::{InnerError, Message},
-    CometdClient, CometdError, CometdResult, RequestBuilderExt,
+    ArcSwapOptionExt, CometdClient, CometdError, CometdResult, RequestBuilderExt,
 };
 use hyper::{header::CONTENT_TYPE, Method, Request};
 use serde_json::json;
@@ -12,7 +12,7 @@ impl CometdClient {
             .uri(&self.handshake_endpoint)
             .method(Method::POST)
             .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&*self.access_token.read().await);
+            .set_authentication_header(&self.access_token.load());
 
         let body = json!([{
           "id": self.next_id(),
@@ -67,7 +67,7 @@ impl CometdClient {
             .into();
             Err(CometdError::handshake_error(InnerError::WrongResponse(msg)))
         } else if let Some(client_id) = client_id {
-            *self.client_id.write().await = Some(client_id);
+            self.client_id.store_value(client_id);
             Ok(())
         } else {
             Err(CometdError::handshake_error(InnerError::WrongResponse(
