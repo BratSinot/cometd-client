@@ -26,9 +26,6 @@ impl CometdClient {
             .client_id
             .load_full()
             .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
-
-        let request_builder = self.create_request_builder(&self.connect_endpoint);
-
         let id = self.next_id();
         let body = json!([{
           "id": id,
@@ -38,20 +35,11 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+        let request_builder = self.create_request_builder(&self.connect_endpoint);
+        let raw_body = self
+            .send_request(request_builder, body, CometdError::connect_error)
+            .await?;
 
-        let mut response = self
-            .http_client
-            .request(request)
-            .await
-            .map_err(CometdError::subscribe_error)?;
-        self.extract_and_store_cookie(&mut response).await;
-
-        let raw_body = hyper::body::to_bytes(response)
-            .await
-            .map_err(CometdError::connect_error)?;
         let mut messages = serde_json::from_slice::<Vec<Message>>(raw_body.as_ref())
             .map_err(CometdError::connect_error)?;
 

@@ -18,8 +18,6 @@ impl CometdClient {
     /// # };
     /// ```
     pub async fn handshake(&self) -> CometdResult<()> {
-        let request_builder = self.create_request_builder(&self.handshake_endpoint);
-
         let body = json!([{
           "id": self.next_id(),
           "version": "1.0",
@@ -33,20 +31,10 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
-
-        let mut response = self
-            .http_client
-            .request(request)
-            .await
-            .map_err(CometdError::handshake_error)?;
-        self.extract_and_store_cookie(&mut response).await;
-
-        let raw_body = hyper::body::to_bytes(response)
-            .await
-            .map_err(CometdError::handshake_error)?;
+        let request_builder = self.create_request_builder(&self.handshake_endpoint);
+        let raw_body = self
+            .send_request(request_builder, body, CometdError::handshake_error)
+            .await?;
 
         let Message {
             client_id,

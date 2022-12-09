@@ -20,11 +20,6 @@ impl CometdClient {
             .client_id
             .swap(None)
             .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
-        let cookie = self.cookie.swap(None);
-
-        let request_builder =
-            self.create_request_builder_with_cookie(&self.disconnect_endpoint, cookie);
-
         let id = self.next_id();
         let body = json!([{
           "id": id,
@@ -33,15 +28,13 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+        let cookie = self.cookie.swap(None);
+        let request_builder =
+            self.create_request_builder_with_cookie(&self.disconnect_endpoint, cookie);
 
         let response = self
-            .http_client
-            .request(request)
-            .await
-            .map_err(CometdError::disconnect_error)?;
+            .send_request_response(request_builder, body, CometdError::disconnect_error)
+            .await?;
 
         match response.status() {
             StatusCode::BAD_REQUEST => Ok(()),

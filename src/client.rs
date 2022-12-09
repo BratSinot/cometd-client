@@ -27,7 +27,7 @@ pub struct CometdClient {
     pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,
     pub(crate) cookie: ArcSwapOption<HeaderValue>,
     client_id: ArcSwapOption<Box<str>>,
-    http_client: Client<HttpConnector>,
+    pub(crate) http_client: Client<HttpConnector>,
 }
 
 impl CometdClient {
