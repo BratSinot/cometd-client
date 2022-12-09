@@ -1,4 +1,4 @@
-use cometd_client::{Basic, CometdClientBuilder};
+use cometd_client::CometdClientBuilder;
 use serde_json::Value as JsonValue;
 
 #[tokio::main]
