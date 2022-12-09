@@ -1,8 +1,5 @@
-use crate::{
-    consts::APPLICATION_JSON, types::InnerError, CometdClient, CometdError, CometdResult,
-    RequestBuilderExt,
-};
-use hyper::{header::CONTENT_TYPE, Method, Request, StatusCode};
+use crate::{types::InnerError, CometdClient, CometdError, CometdResult};
+use hyper::StatusCode;
 use serde_json::json;
 
 impl CometdClient {
@@ -23,15 +20,6 @@ impl CometdClient {
             .client_id
             .swap(None)
             .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
-        let cookie = self.cookie.swap(None);
-
-        let request_builder = Request::builder()
-            .uri(&self.disconnect_endpoint)
-            .method(Method::POST)
-            .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&self.access_token.load())
-            .set_cookie(cookie);
-
         let id = self.next_id();
         let body = json!([{
           "id": id,
@@ -40,15 +28,13 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+        let cookie = self.cookie.swap(None);
+        let request_builder =
+            self.create_request_builder_with_cookie(&self.disconnect_endpoint, cookie);
 
         let response = self
-            .http_client
-            .request(request)
-            .await
-            .map_err(CometdError::disconnect_error)?;
+            .send_request_response(request_builder, body, CometdError::disconnect_error)
+            .await?;
 
         match response.status() {
             StatusCode::BAD_REQUEST => Ok(()),

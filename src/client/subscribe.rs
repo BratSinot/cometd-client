@@ -1,9 +1,4 @@
-use crate::types::Message;
-use crate::{
-    consts::APPLICATION_JSON, types::InnerError, CometdClient, CometdError, CometdResult,
-    RequestBuilderExt,
-};
-use hyper::{header::CONTENT_TYPE, Method, Request};
+use crate::{types::InnerError, types::Message, CometdClient, CometdError, CometdResult};
 use serde::Serialize;
 use serde_json::json;
 
@@ -28,14 +23,6 @@ impl CometdClient {
             .client_id
             .load_full()
             .ok_or_else(|| CometdError::subscribe_error(InnerError::MissingClientId))?;
-
-        let request_builder = Request::builder()
-            .uri(&self.subscribe_endpoint)
-            .method(Method::POST)
-            .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&self.access_token.load())
-            .set_cookie(self.cookie.load_full());
-
         let body = json!([{
           "id": self.next_id(),
           "channel": "/meta/subscribe",
@@ -44,20 +31,11 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+        let request_builder = self.create_request_builder(&self.subscribe_endpoint);
+        let raw_body = self
+            .send_request(request_builder, body, CometdError::subscribe_error)
+            .await?;
 
-        let mut response = self
-            .http_client
-            .request(request)
-            .await
-            .map_err(CometdError::subscribe_error)?;
-        self.extract_and_store_cookie(&mut response).await;
-
-        let raw_body = hyper::body::to_bytes(response)
-            .await
-            .map_err(CometdError::subscribe_error)?;
         let Message {
             successful, error, ..
         } = serde_json::from_slice::<[Message; 1]>(raw_body.as_ref())
