@@ -4,26 +4,20 @@ use crate::{
 };
 use hyper::{header::CONTENT_TYPE, Method, Request, StatusCode};
 use serde_json::json;
-use tokio::try_join;
 
 impl CometdClient {
     pub async fn disconnect(&self) -> CometdResult<()> {
-        let (client_id, cookie) = try_join!(
-            async {
-                self.client_id
-                    .write()
-                    .await
-                    .take()
-                    .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))
-            },
-            async { Ok(self.cookie.write().await.take()) }
-        )?;
+        let client_id = self
+            .client_id
+            .swap(None)
+            .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
+        let cookie = self.cookie.swap(None);
 
         let request_builder = Request::builder()
             .uri(&self.disconnect_endpoint)
             .method(Method::POST)
             .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&*self.access_token.read().await)
+            .set_authentication_header(&self.access_token.load())
             .set_cookie(cookie);
 
         let id = self.next_id();

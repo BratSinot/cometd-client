@@ -14,18 +14,15 @@ impl CometdClient {
     {
         let client_id = self
             .client_id
-            .read()
-            .await
-            .as_ref()
-            .cloned()
+            .load_full()
             .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
 
         let request_builder = Request::builder()
             .uri(&self.connect_endpoint)
             .method(Method::POST)
             .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&*self.access_token.read().await)
-            .set_cookie(self.cookie.read().await.clone());
+            .set_authentication_header(&self.access_token.load())
+            .set_cookie(self.cookie.load_full());
 
         let id = self.next_id();
         let body = json!([{

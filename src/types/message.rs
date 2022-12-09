@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::skip_serializing_none;
-use std::sync::Arc;
 
 #[skip_serializing_none]
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -12,7 +11,7 @@ pub(crate) struct Message {
     pub(crate) minimum_version: Option<String>,
     pub(crate) channel: Option<String>,
     #[serde(rename = "clientId")]
-    pub(crate) client_id: Option<Arc<str>>,
+    pub(crate) client_id: Option<Box<str>>,
     #[serde(rename = "supportedConnectionTypes")]
     pub(crate) supported_connection_types: Option<Vec<String>>,
     pub(crate) data: Option<JsonValue>,
