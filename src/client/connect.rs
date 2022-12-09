@@ -1,5 +1,5 @@
 use crate::{
-    types::{CometdError, CometdResult, Data, InnerError, Message},
+    types::{Advice, CometdError, CometdResult, Data, InnerError, Message},
     CometdClient,
 };
 use serde::de::DeserializeOwned;
@@ -25,7 +25,7 @@ impl CometdClient {
         let client_id = self
             .client_id
             .load_full()
-            .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
+            .ok_or_else(|| CometdError::connect_error(None, InnerError::MissingClientId))?;
         let id = self.next_id();
         let body = json!([{
           "id": id,
@@ -37,33 +37,46 @@ impl CometdClient {
 
         let request_builder = self.create_request_builder(&self.connect_endpoint);
         let raw_body = self
-            .send_request(request_builder, body, CometdError::connect_error)
+            .send_request(request_builder, body, |err| {
+                CometdError::connect_error(None, err)
+            })
             .await?;
 
         let mut messages = serde_json::from_slice::<Vec<Message>>(raw_body.as_ref())
-            .map_err(CometdError::connect_error)?;
+            .map_err(|err| CometdError::connect_error(None, err))?;
 
         if let Some(position) = messages
             .iter()
             .position(|message| message.id.as_ref() == Some(&id))
         {
             let Message {
-                successful, error, ..
+                successful,
+                error,
+                advice,
+                ..
             } = messages.remove(position);
 
             if successful == Some(false) {
-                Err(CometdError::connect_error(InnerError::WrongResponse(
-                    error.unwrap_or_default().into(),
-                )))
+                Err(CometdError::connect_error(
+                    Advice::reconnect(&advice),
+                    InnerError::WrongResponse(error.unwrap_or_default().into()),
+                ))
             } else {
                 let data = messages
                     .into_iter()
                     .map(|message| {
-                        let Message { channel, data, .. } = message;
+                        let Message {
+                            channel,
+                            data,
+                            advice,
+                            ..
+                        } = message;
                         let message = data
                             .map(serde_json::from_value::<Msg>)
                             .transpose()
-                            .map_err(CometdError::connect_error)?;
+                            .map_err(|err| {
+                                CometdError::connect_error(Advice::reconnect(&advice), err)
+                            })?;
 
                         Ok::<_, CometdError>(Data { channel, message })
                     })
@@ -72,9 +85,12 @@ impl CometdClient {
                 Ok(data)
             }
         } else {
-            Err(CometdError::connect_error(InnerError::WrongResponse(
-                "The response corresponding request id cannot be found.".into(),
-            )))
+            Err(CometdError::connect_error(
+                None,
+                InnerError::WrongResponse(
+                    "The response corresponding request id cannot be found.".into(),
+                ),
+            ))
         }
     }
 }

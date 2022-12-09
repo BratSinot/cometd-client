@@ -22,7 +22,7 @@ impl CometdClient {
         let client_id = self
             .client_id
             .swap(None)
-            .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
+            .ok_or_else(|| CometdError::connect_error(None, InnerError::MissingClientId))?;
         let id = self.next_id();
         let body = json!([{
           "id": id,
