@@ -1,4 +1,7 @@
-use crate::{types::InnerError, CometdClient, CometdError, CometdResult};
+use crate::{
+    types::{CometdError, CometdResult, InnerError},
+    CometdClient,
+};
 use hyper::StatusCode;
 use serde_json::json;
 
@@ -7,7 +10,7 @@ impl CometdClient {
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, CometdResult};
+    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
     /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
     ///
     /// # async {
@@ -19,7 +22,7 @@ impl CometdClient {
         let client_id = self
             .client_id
             .swap(None)
-            .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
+            .ok_or_else(|| CometdError::connect_error(None, InnerError::MissingClientId))?;
         let id = self.next_id();
         let body = json!([{
           "id": id,

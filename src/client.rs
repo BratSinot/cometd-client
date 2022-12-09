@@ -6,7 +6,7 @@ mod subscribe;
 
 pub use builder::*;
 
-use crate::{AccessToken, ArcSwapOptionExt};
+use crate::{types::AccessToken, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use hyper::{
     client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Body, Client, Response, Uri,
@@ -35,7 +35,7 @@ impl CometdClient {
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{Basic, CometdClientBuilder};
+    /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
     /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
     ///
     ///     let access_token = Basic::create("username", Some("password")).unwrap();

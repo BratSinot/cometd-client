@@ -2,6 +2,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value as JsonValue;
 use serde_with::skip_serializing_none;
 
+/// Contains channel name of message received from cometd server.
+#[derive(Debug)]
+pub struct Data<Msg> {
+    /// Channel name from which was received message.
+    pub channel: Option<String>,
+    /// Received message.
+    pub message: Option<Msg>,
+}
+
 #[skip_serializing_none]
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub(crate) struct Message {
@@ -17,23 +26,31 @@ pub(crate) struct Message {
     pub(crate) data: Option<JsonValue>,
     pub(crate) successful: Option<bool>,
     pub(crate) error: Option<String>,
-    // TODO: try to parse on errors
-    //pub(crate) advice: Option<Advice>,
+    pub(crate) advice: Option<Advice>,
 }
 
-/*#[skip_serializing_none]
+#[skip_serializing_none]
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub(crate) struct Advice {
-    interval: Option<u64>,
     reconnect: Option<Reconnect>,
-    timeout: Option<u64>,
+    //interval: Option<u64>,
+    //timeout: Option<u64>,
 }
 
+impl Advice {
+    #[inline(always)]
+    pub(crate) fn reconnect(this: &Option<Self>) -> Option<Reconnect> {
+        this.as_ref().and_then(|advice| advice.reconnect)
+    }
+}
+
+/// Advice what to do on error.
+#[allow(missing_docs)]
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub(crate) enum Reconnect {
-    Retry,
-    Handshake,
+pub enum Reconnect {
     #[default]
     None,
-}*/
+    Handshake,
+    Retry,
+}

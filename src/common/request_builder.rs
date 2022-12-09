@@ -1,4 +1,4 @@
-use crate::{consts::APPLICATION_JSON, AccessToken, CometdClient};
+use crate::{consts::APPLICATION_JSON, types::AccessToken, CometdClient};
 use hyper::{
     header::{CONTENT_TYPE, COOKIE},
     http::{request::Builder, HeaderValue},
