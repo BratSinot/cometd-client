@@ -24,8 +24,8 @@ pub struct CometdClient {
     interval_ms: u64,
 
     id: AtomicUsize,
-    access_token: ArcSwapOption<Box<dyn AccessToken>>,
-    cookie: ArcSwapOption<HeaderValue>,
+    pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,
+    pub(crate) cookie: ArcSwapOption<HeaderValue>,
     client_id: ArcSwapOption<Box<str>>,
     http_client: Client<HttpConnector>,
 }

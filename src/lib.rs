@@ -18,6 +18,7 @@
 //!
 
 mod client;
+mod common;
 mod consts;
 mod ext;
 mod types;

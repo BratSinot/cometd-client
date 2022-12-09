@@ -1,9 +1,7 @@
 use crate::{
-    consts::APPLICATION_JSON,
     types::{InnerError, Message},
-    CometdClient, CometdError, CometdResult, Data, RequestBuilderExt,
+    CometdClient, CometdError, CometdResult, Data,
 };
-use hyper::{header::CONTENT_TYPE, Method, Request};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 
@@ -29,12 +27,7 @@ impl CometdClient {
             .load_full()
             .ok_or_else(|| CometdError::connect_error(InnerError::MissingClientId))?;
 
-        let request_builder = Request::builder()
-            .uri(&self.connect_endpoint)
-            .method(Method::POST)
-            .header(CONTENT_TYPE, APPLICATION_JSON)
-            .set_authentication_header(&self.access_token.load())
-            .set_cookie(self.cookie.load_full());
+        let request_builder = self.create_request_builder(&self.connect_endpoint);
 
         let id = self.next_id();
         let body = json!([{
