@@ -28,7 +28,7 @@ use std::fmt::Debug;
 ///         }
 ///     }
 /// ```
-pub trait AccessToken: Debug {
+pub trait AccessToken: Debug + Sync + Send + 'static {
     /// Return reference to array of pairs `(<HeaderName>, <HeaderValue>)`.
     fn get_authorization_header<'a>(&'a self) -> &[(&'static str, Box<str>)];
 }

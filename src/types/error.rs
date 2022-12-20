@@ -16,16 +16,16 @@ pub enum CometdError {
     #[error("Url parse error: `{0}`.")]
     InvalidUri(#[from] InvalidUri),
     #[error("Error during handshake request: `{1}`.")]
-    HandshakeError(Reconnect, Box<dyn Error>),
+    HandshakeError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
     #[error("Error during subscribe request: `{1}`.")]
-    SubscribeError(Reconnect, Box<dyn Error>),
+    SubscribeError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
     #[error("Error during connect request: `{1}`.")]
-    ConnectError(Reconnect, Box<dyn Error>),
+    ConnectError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
     #[error("Error during disconnect request: `{0}`.")]
-    DisconnectError(Box<dyn Error>),
+    DisconnectError(Box<dyn Error + Sync + Send + 'static>),
 
     #[error("Got unexpected error: `{0}`")]
-    UnexpectedError(Box<dyn Error>),
+    UnexpectedError(Box<dyn Error + Sync + Send + 'static>),
 }
 
 impl CometdError {
@@ -47,27 +47,36 @@ impl CometdError {
 
 impl CometdError {
     #[inline(always)]
-    pub(crate) fn unexpected_error<E: Error + 'static>(err: E) -> Self {
+    pub(crate) fn unexpected_error<E: Error + Sync + Send + 'static>(err: E) -> Self {
         Self::UnexpectedError(err.into())
     }
 
     #[inline(always)]
-    pub(crate) fn handshake_error<E: Error + 'static>(advice: Option<Reconnect>, err: E) -> Self {
+    pub(crate) fn handshake_error<E: Error + Sync + Send + 'static>(
+        advice: Option<Reconnect>,
+        err: E,
+    ) -> Self {
         Self::HandshakeError(advice.unwrap_or_default(), err.into())
     }
 
     #[inline(always)]
-    pub(crate) fn subscribe_error<E: Error + 'static>(advice: Option<Reconnect>, err: E) -> Self {
+    pub(crate) fn subscribe_error<E: Error + Sync + Send + 'static>(
+        advice: Option<Reconnect>,
+        err: E,
+    ) -> Self {
         Self::SubscribeError(advice.unwrap_or_default(), err.into())
     }
 
     #[inline(always)]
-    pub(crate) fn connect_error<E: Error + 'static>(advice: Option<Reconnect>, err: E) -> Self {
+    pub(crate) fn connect_error<E: Error + Sync + Send + 'static>(
+        advice: Option<Reconnect>,
+        err: E,
+    ) -> Self {
         Self::ConnectError(advice.unwrap_or_default(), err.into())
     }
 
     #[inline(always)]
-    pub(crate) fn disconnect_error<E: Error + 'static>(err: E) -> Self {
+    pub(crate) fn disconnect_error<E: Error + Sync + Send + 'static>(err: E) -> Self {
         Self::DisconnectError(err.into())
     }
 }
