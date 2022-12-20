@@ -8,17 +8,17 @@ use url::Url;
 
 /// A builder to construct `CometdClient`.
 #[derive(Debug, Default)]
-pub struct CometdClientBuilder {
-    endpoint: Option<&'static str>,
-    handshake_base_path: &'static str,
-    subscribe_base_path: &'static str,
-    connect_base_path: &'static str,
-    disconnect_base_path: &'static str,
+pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
+    endpoint: Option<&'a str>,
+    handshake_base_path: &'b str,
+    subscribe_base_path: &'c str,
+    connect_base_path: &'d str,
+    disconnect_base_path: &'e str,
     timeout_ms: Option<u64>,
     interval_ms: Option<u64>,
 }
 
-impl CometdClientBuilder {
+impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Construct a new `ClientBuilder`.
     #[inline(always)]
     pub fn new() -> Self {
@@ -86,7 +86,7 @@ impl CometdClientBuilder {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn endpoint(self, url: &'static str) -> Self {
+    pub fn endpoint(self, url: &'a str) -> Self {
         Self {
             endpoint: Some(url),
             ..self
@@ -107,7 +107,7 @@ impl CometdClientBuilder {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn handshake_base_path(self, url: &'static str) -> Self {
+    pub fn handshake_base_path(self, url: &'b str) -> Self {
         Self {
             handshake_base_path: url,
             ..self
@@ -128,7 +128,7 @@ impl CometdClientBuilder {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn subscribe_base_path(self, url: &'static str) -> Self {
+    pub fn subscribe_base_path(self, url: &'c str) -> Self {
         Self {
             subscribe_base_path: url,
             ..self
@@ -149,7 +149,7 @@ impl CometdClientBuilder {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn connect_base_path(self, url: &'static str) -> Self {
+    pub fn connect_base_path(self, url: &'d str) -> Self {
         Self {
             connect_base_path: url,
             ..self
@@ -170,7 +170,7 @@ impl CometdClientBuilder {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn disconnect_base_path(self, url: &'static str) -> Self {
+    pub fn disconnect_base_path(self, url: &'e str) -> Self {
         Self {
             disconnect_base_path: url,
             ..self

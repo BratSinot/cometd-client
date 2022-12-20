@@ -1,5 +1,5 @@
 use crate::types::{AccessToken, CometdError, CometdResult};
-use base64::write::EncoderWriter as Base64Writer;
+use base64::{engine::DEFAULT_ENGINE, write::EncoderWriter as Base64Writer};
 use hyper::header::AUTHORIZATION;
 use std::io::Write;
 
@@ -29,7 +29,7 @@ impl Basic {
         let mut basic = Vec::with_capacity(capacity);
         basic.extend_from_slice(BASIC);
 
-        let mut base64_writer = Base64Writer::new(&mut basic, base64::STANDARD);
+        let mut base64_writer = Base64Writer::from(&mut basic, &DEFAULT_ENGINE);
         write!(base64_writer, "{username}:").map_err(CometdError::unexpected_error)?;
         if let Some(password) = password {
             write!(base64_writer, "{password}").map_err(CometdError::unexpected_error)?;

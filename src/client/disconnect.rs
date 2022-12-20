@@ -23,9 +23,8 @@ impl CometdClient {
             .client_id
             .swap(None)
             .ok_or_else(|| CometdError::connect_error(None, InnerError::MissingClientId))?;
-        let id = self.next_id();
         let body = json!([{
-          "id": id,
+          "id": self.next_id(),
           "channel": "/meta/disconnect",
           "clientId": client_id
         }])
