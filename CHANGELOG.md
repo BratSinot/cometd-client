@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Change
 
 - Add `Sync + Send + 'static` for `dyn Error` in `CometdError`.
+- Add `Sync + Send + 'static` for `trait AccessToken`.
 
 ## [0.2.0-beta.1] - 2022-12-20
 
