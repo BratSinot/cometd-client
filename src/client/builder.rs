@@ -1,8 +1,9 @@
 use crate::{
     consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
-    types::{CometdError, CometdResult},
+    types::{AccessToken, CometdError, CometdResult},
     CometdClient,
 };
+use arc_swap::ArcSwapOption;
 use hyper::Client;
 use url::Url;
 
@@ -16,6 +17,7 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     disconnect_base_path: &'e str,
     timeout_ms: Option<u64>,
     interval_ms: Option<u64>,
+    access_token: Option<Box<dyn AccessToken>>,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -47,6 +49,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             disconnect_base_path,
             timeout_ms,
             interval_ms,
+            access_token,
         } = self;
 
         let base_url = Url::parse(endpoint.ok_or(CometdError::MissingEndpoint)?)?;
@@ -57,19 +60,28 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             String::from(base_url.join(connect_base_path)?.join("connect")?).try_into()?;
         let disconnect_endpoint =
             String::from(base_url.join(disconnect_base_path)?.join("disconnect")?).try_into()?;
+        let timeout_ms = timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS);
+        let interval_ms = interval_ms.unwrap_or(DEFAULT_INTERVAL_MS);
+        let id = Default::default();
+        let access_token = access_token
+            .map(ArcSwapOption::from_pointee)
+            .unwrap_or_default();
+        let cookie = Default::default();
+        let client_id = Default::default();
+        let http_client = Client::builder().build_http();
 
         Ok(CometdClient {
             handshake_endpoint,
             subscribe_endpoint,
             connect_endpoint,
             disconnect_endpoint,
-            timeout_ms: timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS),
-            interval_ms: interval_ms.unwrap_or(DEFAULT_INTERVAL_MS),
-            id: Default::default(),
-            access_token: Default::default(),
-            cookie: Default::default(),
-            client_id: Default::default(),
-            http_client: Client::builder().build_http(),
+            timeout_ms,
+            interval_ms,
+            id,
+            access_token,
+            cookie,
+            client_id,
+            http_client,
         })
     }
 
@@ -191,6 +203,18 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     pub fn interval_ms(self, interval_ms: u64) -> Self {
         Self {
             interval_ms: Some(interval_ms),
+            ..self
+        }
+    }
+
+    /// Set `interval` option in handshake request.
+    #[inline(always)]
+    pub fn access_token<AT>(self, access_token: AT) -> Self
+    where
+        AT: AccessToken + 'static,
+    {
+        Self {
+            access_token: Some(Box::new(access_token)),
             ..self
         }
     }
