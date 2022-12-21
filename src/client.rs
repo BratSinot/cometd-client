@@ -41,8 +41,8 @@ impl CometdClient {
     ///     let access_token = Basic::create("username", Some("password")).unwrap();
     ///     client.update_access_token(access_token);
     /// ```
-    #[inline]
-    pub async fn update_access_token<AT>(&self, access_token: AT)
+    #[inline(always)]
+    pub fn update_access_token<AT>(&self, access_token: AT)
     where
         AT: AccessToken + 'static,
     {
