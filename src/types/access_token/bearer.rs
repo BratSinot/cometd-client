@@ -7,7 +7,7 @@ use std::fmt::Display;
 /// # Example
 /// ```rust
 /// # use cometd_client::{types::access_token::Bearer, CometdClientBuilder};
-/// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+/// # let client = CometdClientBuilder::new("http://[::1]:1025/".parse().unwrap()).build().unwrap();
 ///
 ///     let access_token = Bearer::new("f0596451-af4d-40f4-a290-b5e8372c110b");
 ///     client.update_access_token(access_token);
