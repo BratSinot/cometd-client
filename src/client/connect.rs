@@ -11,7 +11,7 @@ impl CometdClient {
     /// # Example
     /// ```rust
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new("http://[::1]:1025/".parse().unwrap()).build().unwrap();
+    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
     ///
     /// # async {
     ///     let data = client.connect::<serde_json::Value>().await?;

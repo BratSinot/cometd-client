@@ -4,7 +4,7 @@ use serde_json::Value as JsonValue;
 #[tokio::main]
 async fn main() {
     let endpoint = "http://[::1]:1025/notifications/".parse().unwrap();
-    let client = CometdClientBuilder::new(endpoint).build().unwrap();
+    let client = CometdClientBuilder::new(&endpoint).build().unwrap();
 
     client.handshake().await.unwrap();
     client.subscribe(&["/topic0", "/topic1"]).await.unwrap();
