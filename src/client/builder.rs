@@ -1,6 +1,6 @@
 use crate::{
     consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
-    types::{AccessToken, CometdError, CometdResult},
+    types::{AccessToken, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
@@ -8,9 +8,9 @@ use hyper::Client;
 use url::Url;
 
 /// A builder to construct `CometdClient`.
-#[derive(Debug, Default)]
-pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
-    endpoint: Option<&'a str>,
+#[derive(Debug)]
+pub struct CometdClientBuilder<'b, 'c, 'd, 'e> {
+    endpoint: Url,
     handshake_base_path: &'b str,
     subscribe_base_path: &'c str,
     connect_base_path: &'d str,
@@ -20,11 +20,20 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     access_token: Option<Box<dyn AccessToken>>,
 }
 
-impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
+impl<'b, 'c, 'd, 'e> CometdClientBuilder<'b, 'c, 'd, 'e> {
     /// Construct a new `ClientBuilder`.
     #[inline(always)]
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(endpoint: Url) -> Self {
+        Self {
+            endpoint,
+            handshake_base_path: "",
+            subscribe_base_path: "",
+            connect_base_path: "",
+            disconnect_base_path: "",
+            timeout_ms: None,
+            interval_ms: None,
+            access_token: None,
+        }
     }
 
     /// Return a `CometdClient`.
@@ -34,15 +43,14 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// use cometd_client::CometdClientBuilder;
     ///
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let client = CometdClientBuilder::new()
-    ///     .endpoint("http://[::1]:1025/notifications/")
+    /// let client = CometdClientBuilder::new("http://[::1]:1025/notifications/".parse()?)
     ///     .build()?;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
     pub fn build(self) -> CometdResult<CometdClient> {
         let Self {
-            endpoint,
+            endpoint: base_url,
             handshake_base_path,
             subscribe_base_path,
             connect_base_path,
@@ -52,7 +60,6 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             access_token,
         } = self;
 
-        let base_url = Url::parse(endpoint.ok_or(CometdError::MissingEndpoint)?)?;
         let handshake_endpoint =
             String::from(base_url.join(handshake_base_path)?.join("handshake")?).try_into()?;
         let subscribe_endpoint = String::from(base_url.join(subscribe_base_path)?).try_into()?;
@@ -85,26 +92,6 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         })
     }
 
-    /// Set cometd server endpoint.
-    ///
-    /// # Example
-    /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
-    /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new()
-    ///     .endpoint("http://[::1]:1025/notifications/")
-    ///     .build()?;
-    /// # Ok(()) };
-    /// ```
-    #[inline(always)]
-    pub fn endpoint(self, url: &'a str) -> Self {
-        Self {
-            endpoint: Some(url),
-            ..self
-        }
-    }
-
     /// Set cometd server handshake url path.
     ///
     /// # Example
@@ -112,9 +99,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// use cometd_client::CometdClientBuilder;
     ///
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new()
+    /// let app = CometdClientBuilder::new("http://[::1]:1025/notifications/".parse()?)
     ///     .handshake_base_path("hand/") // http://[::1]:1025/notifications/hand/handshake
-    ///     .endpoint("http://[::1]:1025/notifications/")
     ///     .build()?;
     /// # Ok(()) };
     /// ```
@@ -133,9 +119,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// use cometd_client::CometdClientBuilder;
     ///
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new()
+    /// let app = CometdClientBuilder::new("http://[::1]:1025/notifications/".parse()?)
     ///     .subscribe_base_path("sub/") // http://[::1]:1025/notifications/sub/
-    ///     .endpoint("http://[::1]:1025/notifications/")
     ///     .build()?;
     /// # Ok(()) };
     /// ```
@@ -154,9 +139,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// use cometd_client::CometdClientBuilder;
     ///
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new()
+    /// let app = CometdClientBuilder::new("http://[::1]:1025/notifications/".parse()?)
     ///     .connect_base_path("con/") // http://[::1]:1025/notifications/con/connect
-    ///     .endpoint("http://[::1]:1025/notifications/")
     ///     .build()?;
     /// # Ok(()) };
     /// ```
@@ -175,9 +159,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// use cometd_client::CometdClientBuilder;
     ///
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new()
+    /// let app = CometdClientBuilder::new("http://[::1]:1025/notifications/".parse()?)
     ///     .connect_base_path("discon/") // http://[::1]:1025/notifications/discon/disconnect
-    ///     .endpoint("http://[::1]:1025/notifications/")
     ///     .build()?;
     /// # Ok(()) };
     /// ```

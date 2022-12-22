@@ -11,7 +11,7 @@ impl CometdClient {
     /// # Example
     /// ```rust
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new().endpoint("http://[::1]:1025/").build().unwrap();
+    /// # let client = CometdClientBuilder::new("http://[::1]:1025/".parse().unwrap()).build().unwrap();
     ///
     /// # async {
     ///     client.subscribe(&["/topic0", "/topic1"]).await?;
