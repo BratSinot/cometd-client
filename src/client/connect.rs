@@ -32,18 +32,13 @@ impl CometdClient {
           "channel": "/meta/connect",
           "connectionType": "long-polling",
           "clientId": client_id
-        }])
-        .to_string();
+        }]);
 
-        let request_builder = self.create_request_builder(&self.connect_endpoint);
-        let raw_body = self
-            .send_request(request_builder, body, |err| {
+        let mut messages: Vec<Message> = self
+            .send_request(self.connect_endpoint.clone(), &body, |err| {
                 CometdError::connect_error(None, err)
             })
             .await?;
-
-        let mut messages = serde_json::from_slice::<Vec<Message>>(raw_body.as_ref())
-            .map_err(|err| CometdError::connect_error(None, err))?;
 
         if let Some(position) = messages
             .iter()

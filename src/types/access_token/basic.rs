@@ -1,6 +1,6 @@
 use crate::types::{AccessToken, CometdError, CometdResult};
 use base64::{engine::DEFAULT_ENGINE, write::EncoderWriter as Base64Writer};
-use hyper::header::AUTHORIZATION;
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use std::io::Write;
 
 const BASIC: &[u8] = b"Basic ";
@@ -16,7 +16,7 @@ const BASIC: &[u8] = b"Basic ";
 ///     client.update_access_token(access_token);
 /// ```
 #[derive(Debug)]
-pub struct Basic([(&'static str, Box<str>); 1]);
+pub struct Basic(HeaderMap);
 
 impl Basic {
     /// Create `Basic` access token.
@@ -36,18 +36,15 @@ impl Basic {
         }
         drop(base64_writer);
 
-        Ok(Self([(
-            AUTHORIZATION.as_str(),
-            String::from_utf8(basic)
-                .map_err(CometdError::unexpected_error)?
-                .into_boxed_str(),
-        )]))
+        let basic = HeaderValue::try_from(basic).map_err(CometdError::unexpected_error)?;
+
+        Ok(Self(HeaderMap::from_iter([(AUTHORIZATION, basic)])))
     }
 }
 
 impl AccessToken for Basic {
-    fn get_authorization_header<'a>(&'a self) -> &[(&'static str, Box<str>)] {
-        &self.0
+    fn get_authorization_header(&self) -> HeaderMap {
+        self.0.clone()
     }
 }
 
