@@ -71,7 +71,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             .map(ArcSwapOption::from_pointee)
             .unwrap_or_default();
         let client_id = Default::default();
-        let http_client = Client::new();
+        let http_client = Client::builder()
+            .cookie_store(true)
+            .build()
+            .expect("Can't build reqwest::Client");
 
         Ok(CometdClient {
             handshake_endpoint,
