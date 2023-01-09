@@ -1,6 +1,6 @@
 use crate::{
     consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
-    types::{AccessToken, CometdResult},
+    types::{AccessToken, CometdError, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
@@ -74,7 +74,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         let http_client = Client::builder()
             .cookie_store(true)
             .build()
-            .expect("Can't build reqwest::Client");
+            .map_err(CometdError::unexpected_error)?;
 
         Ok(CometdClient {
             handshake_endpoint,
