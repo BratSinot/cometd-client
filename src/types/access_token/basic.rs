@@ -1,5 +1,7 @@
 use crate::types::{AccessToken, CometdError, CometdResult};
-use base64::{engine::DEFAULT_ENGINE, write::EncoderWriter as Base64Writer};
+use base64::{
+    encoded_len, engine::general_purpose::STANDARD, write::EncoderWriter as Base64Writer,
+};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use std::io::Write;
 
@@ -22,14 +24,15 @@ impl Basic {
     /// Create `Basic` access token.
     #[inline]
     pub fn create(username: &str, password: Option<&str>) -> CometdResult<Self> {
-        let capacity = calculate_padded_base64_len(BASIC.len())
-            .saturating_add(calculate_padded_base64_len(username.len()))
+        let capacity = encoded_len(BASIC.len(), true)
+            .unwrap_or_default()
+            .saturating_add(encoded_len(username.len(), true).unwrap_or_default())
             .saturating_add(password.map(str::len).unwrap_or(0));
 
         let mut basic = Vec::with_capacity(capacity);
         basic.extend_from_slice(BASIC);
 
-        let mut base64_writer = Base64Writer::from(&mut basic, &DEFAULT_ENGINE);
+        let mut base64_writer = Base64Writer::new(&mut basic, &STANDARD);
         write!(base64_writer, "{username}:").map_err(CometdError::unexpected_error)?;
         if let Some(password) = password {
             write!(base64_writer, "{password}").map_err(CometdError::unexpected_error)?;
@@ -46,14 +49,4 @@ impl AccessToken for Basic {
     fn get_authorization_header(&self) -> HeaderMap {
         self.0.clone()
     }
-}
-
-#[inline]
-const fn calculate_padded_base64_len(len: usize) -> usize {
-    // ((4 * n / 3) + 3) & !3
-    4usize
-        .saturating_mul(len)
-        .saturating_div(3)
-        .saturating_add(3)
-        & !3
 }

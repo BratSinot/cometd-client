@@ -29,7 +29,7 @@ tokio = { version = "1", features = ["macros"] }
 url = "2.3.*"
 
 # optional dependencies
-base64 = { version = "0.20.*", optional = true }
+base64 = { version = "0.21.*", optional = true }
 
 [dev-dependencies]
 cometd-client = { path = "./", features = ["all"] }
