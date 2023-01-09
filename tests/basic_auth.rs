@@ -1,4 +1,5 @@
 use cometd_client::types::{access_token::Basic, AccessToken};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 
 #[test]
 fn test_basic_auth() {
@@ -7,10 +8,16 @@ fn test_basic_auth() {
 
     assert_eq!(
         basic0.get_authorization_header(),
-        [("authorization", "Basic VmFzeWE6".into())]
+        HeaderMap::from_iter([(
+            HeaderName::from_static("authorization"),
+            HeaderValue::from_static("Basic VmFzeWE6")
+        )])
     );
     assert_eq!(
         basic1.get_authorization_header(),
-        [("authorization", "Basic VmFzeWE6UGV0eWE=".into())]
+        HeaderMap::from_iter([(
+            HeaderName::from_static("authorization"),
+            HeaderValue::from_static("Basic VmFzeWE6UGV0eWE=")
+        )])
     );
 }

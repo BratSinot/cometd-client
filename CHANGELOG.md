@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - Add `Sync + Send + 'static` for `dyn Error` in `CometdError`.
 - Add `Sync + Send + 'static` for `trait AccessToken`.
 - `endpoint` moved to `Builder::new` and it now `Url`.
+- Switch to `reqwest` instead of pure `hyper` http client.
 
 ## [0.1.0] - 2022-12-09
 

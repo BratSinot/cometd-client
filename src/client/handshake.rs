@@ -28,26 +28,20 @@ impl CometdClient {
             "timeout": self.timeout_ms,
             "interval": self.interval_ms,
           }
-        }])
-        .to_string();
+        }]);
 
-        let request_builder = self.create_request_builder(&self.handshake_endpoint);
-        let raw_body = self
-            .send_request(request_builder, body, |err| {
-                CometdError::handshake_error(None, err)
-            })
-            .await?;
-
-        let Message {
+        let [Message {
             client_id,
             supported_connection_types,
             successful,
             error,
             advice,
             ..
-        } = serde_json::from_slice::<[Message; 1]>(raw_body.as_ref())
-            .map(|[message]| message)
-            .map_err(|err| CometdError::handshake_error(None, err))?;
+        }]: [Message; 1] = self
+            .send_request(self.handshake_endpoint.clone(), &body, |err| {
+                CometdError::handshake_error(None, err)
+            })
+            .await?;
 
         if successful == Some(false) {
             Err(CometdError::handshake_error(

@@ -2,7 +2,7 @@ use crate::{
     types::{CometdError, CometdResult, InnerError},
     CometdClient,
 };
-use hyper::StatusCode;
+use reqwest::StatusCode;
 use serde_json::json;
 
 impl CometdClient {
@@ -27,15 +27,14 @@ impl CometdClient {
           "id": self.next_id(),
           "channel": "/meta/disconnect",
           "clientId": client_id
-        }])
-        .to_string();
-
-        let cookie = self.cookie.swap(None);
-        let request_builder =
-            self.create_request_builder_with_cookie(&self.disconnect_endpoint, cookie);
+        }]);
 
         let response = self
-            .send_request_response(request_builder, body, CometdError::disconnect_error)
+            .send_request_response(
+                self.disconnect_endpoint.clone(),
+                &body,
+                CometdError::disconnect_error,
+            )
             .await?;
 
         match response.status() {

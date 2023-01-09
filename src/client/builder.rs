@@ -1,10 +1,10 @@
 use crate::{
     consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
-    types::{AccessToken, CometdResult},
+    types::{AccessToken, CometdError, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
-use hyper::Client;
+use reqwest::Client;
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -60,22 +60,21 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             access_token,
         } = self;
 
-        let handshake_endpoint =
-            String::from(base_url.join(handshake_base_path)?.join("handshake")?).try_into()?;
-        let subscribe_endpoint = String::from(base_url.join(subscribe_base_path)?).try_into()?;
-        let connect_endpoint =
-            String::from(base_url.join(connect_base_path)?.join("connect")?).try_into()?;
-        let disconnect_endpoint =
-            String::from(base_url.join(disconnect_base_path)?.join("disconnect")?).try_into()?;
+        let handshake_endpoint = base_url.join(handshake_base_path)?.join("handshake")?;
+        let subscribe_endpoint = base_url.join(subscribe_base_path)?;
+        let connect_endpoint = base_url.join(connect_base_path)?.join("connect")?;
+        let disconnect_endpoint = base_url.join(disconnect_base_path)?.join("disconnect")?;
         let timeout_ms = timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS);
         let interval_ms = interval_ms.unwrap_or(DEFAULT_INTERVAL_MS);
         let id = Default::default();
         let access_token = access_token
             .map(ArcSwapOption::from_pointee)
             .unwrap_or_default();
-        let cookie = Default::default();
         let client_id = Default::default();
-        let http_client = Client::builder().build_http();
+        let http_client = Client::builder()
+            .cookie_store(true)
+            .build()
+            .map_err(CometdError::unexpected_error)?;
 
         Ok(CometdClient {
             handshake_endpoint,
@@ -86,7 +85,6 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms,
             id,
             access_token,
-            cookie,
             client_id,
             http_client,
         })

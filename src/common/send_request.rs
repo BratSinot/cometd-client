@@ -2,35 +2,45 @@ use crate::{
     types::{CometdError, CometdResult},
     CometdClient,
 };
-use hyper::{body::Bytes, http::request::Builder, Body, Error as HyperError, Response};
+use reqwest::{Error as ReqwestError, Response};
+use serde::{de::DeserializeOwned, Serialize};
+use url::Url;
 
 impl CometdClient {
     #[inline]
     pub(crate) async fn send_request_response(
         &self,
-        request_builder: Builder,
-        body: String,
-        map_err: impl Fn(HyperError) -> CometdError,
-    ) -> CometdResult<Response<Body>> {
-        let request = request_builder
-            .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+        endpoint: Url,
+        body: &impl Serialize,
+        map_err: impl Fn(ReqwestError) -> CometdError,
+    ) -> CometdResult<Response> {
+        let headers = self
+            .access_token
+            .load()
+            .as_deref()
+            .map(|token| token.get_authorization_header())
+            .unwrap_or_default();
 
-        self.http_client.request(request).await.map_err(map_err)
+        self.http_client
+            .post(endpoint)
+            .headers(headers)
+            .json(body)
+            .send()
+            .await
+            .map_err(map_err)
     }
 
     #[inline]
-    pub(crate) async fn send_request(
+    pub(crate) async fn send_request<T: DeserializeOwned>(
         &self,
-        request_builder: Builder,
-        body: String,
-        map_err: impl Fn(HyperError) -> CometdError + Copy,
-    ) -> CometdResult<Bytes> {
-        let mut response = self
-            .send_request_response(request_builder, body, map_err)
-            .await?;
-        self.extract_and_store_cookie(&mut response).await;
-
-        hyper::body::to_bytes(response).await.map_err(map_err)
+        endpoint: Url,
+        body: &impl Serialize,
+        map_err: impl Fn(ReqwestError) -> CometdError + Copy,
+    ) -> CometdResult<T> {
+        self.send_request_response(endpoint, body, map_err)
+            .await?
+            .json()
+            .await
+            .map_err(map_err)
     }
 }

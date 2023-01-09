@@ -1,5 +1,4 @@
 use crate::types::Reconnect;
-use hyper::http::uri::InvalidUri;
 use std::{borrow::Cow, error::Error};
 use url::ParseError as UrlParseError;
 
@@ -13,8 +12,6 @@ pub enum CometdError {
     MissingEndpoint,
     #[error("Url parse error: `{0}`.")]
     InvalidUrl(#[from] UrlParseError),
-    #[error("Url parse error: `{0}`.")]
-    InvalidUri(#[from] InvalidUri),
     #[error("Error during handshake request: `{1}`.")]
     HandshakeError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
     #[error("Error during subscribe request: `{1}`.")]
@@ -35,7 +32,6 @@ impl CometdError {
         match self {
             CometdError::MissingEndpoint
             | CometdError::InvalidUrl(_)
-            | CometdError::InvalidUri(_)
             | CometdError::DisconnectError(_)
             | CometdError::UnexpectedError(_) => Reconnect::None,
             CometdError::HandshakeError(advice, _)

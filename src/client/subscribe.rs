@@ -28,24 +28,18 @@ impl CometdClient {
           "channel": "/meta/subscribe",
           "subscription": subscriptions,
           "clientId": client_id
-        }])
-        .to_string();
+        }]);
 
-        let request_builder = self.create_request_builder(&self.subscribe_endpoint);
-        let raw_body = self
-            .send_request(request_builder, body, |err| {
-                CometdError::subscribe_error(None, err)
-            })
-            .await?;
-
-        let Message {
+        let [Message {
             successful,
             error,
             advice,
             ..
-        } = serde_json::from_slice::<[Message; 1]>(raw_body.as_ref())
-            .map(|[message]| message)
-            .map_err(|err| CometdError::subscribe_error(None, err))?;
+        }]: [Message; 1] = self
+            .send_request(self.subscribe_endpoint.clone(), &body, |err| {
+                CometdError::subscribe_error(None, err)
+            })
+            .await?;
 
         if successful == Some(false) {
             Err(CometdError::subscribe_error(

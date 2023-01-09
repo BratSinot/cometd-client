@@ -8,26 +8,24 @@ pub use builder::*;
 
 use crate::{types::AccessToken, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
-use hyper::{
-    client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Body, Client, Response, Uri,
-};
+use reqwest::Client;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use url::Url;
 
 /// A cometd Client.
 #[derive(Debug)]
 pub struct CometdClient {
-    handshake_endpoint: Uri,
-    subscribe_endpoint: Uri,
-    connect_endpoint: Uri,
-    disconnect_endpoint: Uri,
+    handshake_endpoint: Url,
+    subscribe_endpoint: Url,
+    connect_endpoint: Url,
+    disconnect_endpoint: Url,
     timeout_ms: u64,
     interval_ms: u64,
 
     id: AtomicUsize,
     pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,
-    pub(crate) cookie: ArcSwapOption<HeaderValue>,
     client_id: ArcSwapOption<Box<str>>,
-    pub(crate) http_client: Client<HttpConnector>,
+    pub(crate) http_client: Client,
 }
 
 impl CometdClient {
@@ -52,12 +50,5 @@ impl CometdClient {
     #[inline(always)]
     pub(crate) fn next_id(&self) -> String {
         self.id.fetch_add(1, Ordering::Relaxed).to_string()
-    }
-
-    #[inline(always)]
-    pub(crate) async fn extract_and_store_cookie(&self, response: &mut Response<Body>) {
-        if let Some(cookie) = response.headers_mut().remove(SET_COOKIE) {
-            self.cookie.store_value(cookie);
-        }
     }
 }
