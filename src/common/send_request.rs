@@ -26,10 +26,10 @@ impl CometdClient {
         body: String,
         map_err: impl Fn(HyperError) -> CometdError + Copy,
     ) -> CometdResult<Bytes> {
-        let mut response = self
+        let response = self
             .send_request_response(request_builder, body, map_err)
             .await?;
-        self.extract_and_store_cookie(&mut response).await;
+        self.extract_and_store_cookie(&response).await;
 
         hyper::body::to_bytes(response).await.map_err(map_err)
     }

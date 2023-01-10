@@ -30,9 +30,7 @@ impl CometdClient {
         }])
         .to_string();
 
-        let cookie = self.cookie.swap(None);
-        let request_builder =
-            self.create_request_builder_with_cookie(&self.disconnect_endpoint, cookie);
+        let request_builder = self.create_request_builder(&self.disconnect_endpoint).await;
 
         let response = self
             .send_request_response(request_builder, body, CometdError::disconnect_error)
