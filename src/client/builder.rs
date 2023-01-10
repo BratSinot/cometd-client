@@ -1,10 +1,14 @@
 use crate::{
     consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
+    ext::CookieJarExt,
     types::{AccessToken, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
+use cookie::{Cookie, CookieJar};
 use hyper::Client;
+use std::borrow::Cow;
+use tokio::sync::RwLock;
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -18,6 +22,7 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     timeout_ms: Option<u64>,
     interval_ms: Option<u64>,
     access_token: Option<Box<dyn AccessToken>>,
+    cookies: Option<CookieJar>,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -33,6 +38,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             timeout_ms: None,
             interval_ms: None,
             access_token: None,
+            cookies: None,
         }
     }
 
@@ -58,6 +64,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             timeout_ms,
             interval_ms,
             access_token,
+            cookies,
         } = self;
 
         let handshake_endpoint =
@@ -73,7 +80,12 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         let access_token = access_token
             .map(ArcSwapOption::from_pointee)
             .unwrap_or_default();
-        let cookie = Default::default();
+        let cookies_string_cache = cookies
+            .as_ref()
+            .map(CookieJarExt::make_string)
+            .map(ArcSwapOption::from_pointee)
+            .unwrap_or_default();
+        let cookies = cookies.unwrap_or_default();
         let client_id = Default::default();
         let http_client = Client::builder().build_http();
 
@@ -86,7 +98,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms,
             id,
             access_token,
-            cookie,
+            cookies: RwLock::new(cookies),
+            cookies_string_cache,
             client_id,
             http_client,
         })
@@ -198,6 +211,35 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     {
         Self {
             access_token: Some(Box::new(access_token)),
+            ..self
+        }
+    }
+
+    /// Set `cookie`.
+    #[inline(always)]
+    pub fn cookie<N, V>(self, name: N, value: V) -> Self
+    where
+        N: Into<Cow<'static, str>>,
+        V: Into<Cow<'static, str>>,
+    {
+        self.cookies([(name, value)])
+    }
+
+    /// Set `cookies`.
+    #[inline(always)]
+    pub fn cookies<N, V>(self, cookies: impl IntoIterator<Item = (N, V)>) -> Self
+    where
+        N: Into<Cow<'static, str>>,
+        V: Into<Cow<'static, str>>,
+    {
+        let mut cookie_jar = CookieJar::new();
+
+        for (name, value) in cookies {
+            cookie_jar.add(Cookie::new(name, value))
+        }
+
+        Self {
+            cookies: Some(cookie_jar),
             ..self
         }
     }
