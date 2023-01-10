@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 impl CometdClient {
     #[inline]
-    pub(crate) async fn create_request_builder(&self, uri: &Uri) -> Builder {
+    pub(crate) fn create_request_builder(&self, uri: &Uri) -> Builder {
         let mut ret = Request::builder()
             .uri(uri)
             .method(Method::POST)

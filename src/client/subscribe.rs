@@ -31,7 +31,7 @@ impl CometdClient {
         }])
         .to_string();
 
-        let request_builder = self.create_request_builder(&self.subscribe_endpoint).await;
+        let request_builder = self.create_request_builder(&self.subscribe_endpoint);
         let raw_body = self
             .send_request(request_builder, body, |err| {
                 CometdError::subscribe_error(None, err)
