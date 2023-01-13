@@ -10,7 +10,7 @@ impl CometdClient {
         &self,
         request_builder: Builder,
         body: String,
-        map_err: impl Fn(HyperError) -> CometdError,
+        map_err: impl Fn(HyperError) -> CometdError + Send,
     ) -> CometdResult<Response<Body>> {
         let request = request_builder
             .body(body.into())
@@ -24,7 +24,7 @@ impl CometdClient {
         &self,
         request_builder: Builder,
         body: String,
-        map_err: impl Fn(HyperError) -> CometdError + Copy,
+        map_err: impl Fn(HyperError) -> CometdError + Copy + Send,
     ) -> CometdResult<Bytes> {
         let response = self
             .send_request_response(request_builder, body, map_err)

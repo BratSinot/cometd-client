@@ -27,7 +27,7 @@ impl Basic {
         let capacity = encoded_len(BASIC.len(), true)
             .unwrap_or_default()
             .saturating_add(encoded_len(username.len(), true).unwrap_or_default())
-            .saturating_add(password.map(str::len).unwrap_or(0));
+            .saturating_add(password.map_or(0, str::len));
 
         let mut basic = Vec::with_capacity(capacity);
         basic.extend_from_slice(BASIC);

@@ -9,13 +9,11 @@ pub use builder::*;
 use crate::{ext::CookieJarExt, types::AccessToken, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use cookie::{Cookie, CookieJar};
+use core::sync::atomic::{AtomicUsize, Ordering};
 use hyper::{
     client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Body, Client, Response, Uri,
 };
-use std::{
-    borrow::Cow,
-    sync::atomic::{AtomicUsize, Ordering},
-};
+use std::borrow::Cow;
 use tokio::sync::RwLock;
 
 /// A cometd Client.
@@ -65,7 +63,7 @@ impl CometdClient {
     ///     client.add_cookies([("a", "1")]);
     /// ```
     #[inline(always)]
-    pub async fn add_cookies<N, V>(&self, cookies: impl IntoIterator<Item = (N, V)>)
+    pub async fn add_cookies<N, V>(&self, cookies: impl IntoIterator<Item = (N, V)> + Send)
     where
         N: Into<Cow<'static, str>>,
         V: Into<Cow<'static, str>>,

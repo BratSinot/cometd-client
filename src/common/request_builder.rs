@@ -15,6 +15,7 @@ impl CometdClient {
             .header(CONTENT_TYPE, APPLICATION_JSON);
 
         // set authorization headers
+        #[allow(clippy::pattern_type_mismatch)]
         for (header, value) in self
             .access_token
             .load()

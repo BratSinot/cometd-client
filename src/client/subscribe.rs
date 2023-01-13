@@ -18,7 +18,10 @@ impl CometdClient {
     /// #   CometdResult::Ok(())
     /// # };
     /// ```
-    pub async fn subscribe(&self, subscriptions: &[impl Serialize]) -> CometdResult<()> {
+    pub async fn subscribe(
+        &self,
+        subscriptions: &[impl Serialize + Send + Sync],
+    ) -> CometdResult<()> {
         let client_id = self
             .client_id
             .load_full()
