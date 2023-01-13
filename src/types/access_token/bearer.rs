@@ -1,6 +1,6 @@
 use crate::types::AccessToken;
+use core::fmt::Display;
 use hyper::header::AUTHORIZATION;
-use std::fmt::Display;
 
 /// `Bearer` can be used as `AccessToken` for bearer authorization ('authorization: Bearer f0596451-af4d-40f4-a290-b5e8372c110b').
 ///

@@ -1,3 +1,6 @@
+// https://github.com/rust-lang/rust-clippy/issues/10198
+#![allow(clippy::std_instead_of_core)]
+
 use crate::types::Reconnect;
 use hyper::http::uri::InvalidUri;
 use std::{borrow::Cow, error::Error};
@@ -31,8 +34,8 @@ pub enum CometdError {
 impl CometdError {
     /// Return advice if server set it in response.
     #[inline]
-    pub fn advice(&self) -> Reconnect {
-        match self {
+    pub const fn advice(&self) -> Reconnect {
+        match *self {
             CometdError::MissingEndpoint
             | CometdError::InvalidUrl(_)
             | CometdError::InvalidUri(_)
@@ -40,7 +43,7 @@ impl CometdError {
             | CometdError::UnexpectedError(_) => Reconnect::None,
             CometdError::HandshakeError(advice, _)
             | CometdError::SubscribeError(advice, _)
-            | CometdError::ConnectError(advice, _) => *advice,
+            | CometdError::ConnectError(advice, _) => advice,
         }
     }
 }

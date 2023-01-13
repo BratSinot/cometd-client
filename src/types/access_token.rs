@@ -6,7 +6,7 @@ mod bearer;
 pub use basic::*;
 pub use bearer::*;
 
-use std::fmt::Debug;
+use core::fmt::Debug;
 
 /// Trait which can be used for implementing custom access token.
 ///

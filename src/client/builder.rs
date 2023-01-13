@@ -118,11 +118,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn handshake_base_path(self, url: &'b str) -> Self {
-        Self {
-            handshake_base_path: url,
-            ..self
-        }
+    #[must_use]
+    pub const fn handshake_base_path(mut self, url: &'b str) -> Self {
+        self.handshake_base_path = url;
+        self
     }
 
     /// Set cometd server subscribe url path.
@@ -138,11 +137,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn subscribe_base_path(self, url: &'c str) -> Self {
-        Self {
-            subscribe_base_path: url,
-            ..self
-        }
+    #[must_use]
+    pub const fn subscribe_base_path(mut self, url: &'c str) -> Self {
+        self.subscribe_base_path = url;
+        self
     }
 
     /// Set cometd server connect url path.
@@ -158,11 +156,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn connect_base_path(self, url: &'d str) -> Self {
-        Self {
-            connect_base_path: url,
-            ..self
-        }
+    #[must_use]
+    pub const fn connect_base_path(mut self, url: &'d str) -> Self {
+        self.connect_base_path = url;
+        self
     }
 
     /// Set cometd server disconnect url path.
@@ -178,33 +175,31 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn disconnect_base_path(self, url: &'e str) -> Self {
-        Self {
-            disconnect_base_path: url,
-            ..self
-        }
+    #[must_use]
+    pub const fn disconnect_base_path(mut self, url: &'e str) -> Self {
+        self.disconnect_base_path = url;
+        self
     }
 
     /// Set `timeout` option in handshake request.
     #[inline(always)]
-    pub fn timeout_ms(self, timeout_ms: u64) -> Self {
-        Self {
-            timeout_ms: Some(timeout_ms),
-            ..self
-        }
+    #[must_use]
+    pub const fn timeout_ms(mut self, timeout_ms: u64) -> Self {
+        self.timeout_ms = Some(timeout_ms);
+        self
     }
 
     /// Set `interval` option in handshake request.
     #[inline(always)]
-    pub fn interval_ms(self, interval_ms: u64) -> Self {
-        Self {
-            interval_ms: Some(interval_ms),
-            ..self
-        }
+    #[must_use]
+    pub const fn interval_ms(mut self, interval_ms: u64) -> Self {
+        self.interval_ms = Some(interval_ms);
+        self
     }
 
     /// Set `interval` option in handshake request.
     #[inline(always)]
+    #[must_use]
     pub fn access_token<AT>(self, access_token: AT) -> Self
     where
         AT: AccessToken + 'static,
@@ -217,6 +212,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
 
     /// Set `cookie`.
     #[inline(always)]
+    #[must_use]
     pub fn cookie<N, V>(self, name: N, value: V) -> Self
     where
         N: Into<Cow<'static, str>>,
@@ -227,6 +223,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
 
     /// Set `cookies`.
     #[inline(always)]
+    #[must_use]
     pub fn cookies<N, V>(self, cookies: impl IntoIterator<Item = (N, V)>) -> Self
     where
         N: Into<Cow<'static, str>>,
