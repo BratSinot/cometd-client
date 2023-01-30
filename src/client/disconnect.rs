@@ -1,5 +1,6 @@
+use crate::types::Reconnect;
 use crate::{
-    types::{CometdError, CometdResult, InnerError},
+    types::{CometdError, CometdResult, ErrorKind},
     CometdClient,
 };
 use hyper::StatusCode;
@@ -19,10 +20,12 @@ impl CometdClient {
     /// # };
     /// ```
     pub async fn disconnect(&self) -> CometdResult<()> {
+        const KIND: ErrorKind = ErrorKind::Disconnect;
+
         let client_id = self
             .client_id
             .swap(None)
-            .ok_or_else(|| CometdError::connect_error(None, InnerError::MissingClientId))?;
+            .ok_or_else(|| CometdError::MissingClientId(KIND))?;
         let body = json!([{
           "id": self.next_id(),
           "channel": "/meta/disconnect",
@@ -32,15 +35,19 @@ impl CometdClient {
 
         let request_builder = self.create_request_builder(&self.disconnect_endpoint);
 
-        let response = self
-            .send_request_response(request_builder, body, CometdError::disconnect_error)
-            .await?;
+        let status_code = self
+            .send_request_response(request_builder, body, KIND)
+            .await?
+            .0;
 
-        match response.status() {
-            StatusCode::BAD_REQUEST => Ok(()),
-            code => Err(CometdError::disconnect_error(InnerError::WrongResponse(
-                format!("Unknown status code: {code}").into(),
-            ))),
+        if status_code == StatusCode::BAD_REQUEST {
+            Ok(())
+        } else {
+            Err(CometdError::wrong_response(
+                KIND,
+                Reconnect::None,
+                format!("Unknown status code: {status_code}"),
+            ))
         }
     }
 }

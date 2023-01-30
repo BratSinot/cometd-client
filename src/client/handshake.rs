@@ -1,5 +1,5 @@
 use crate::{
-    types::{Advice, CometdError, CometdResult, InnerError, Message},
+    types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
     ArcSwapOptionExt, CometdClient,
 };
 use serde_json::json;
@@ -18,6 +18,8 @@ impl CometdClient {
     /// # };
     /// ```
     pub async fn handshake(&self) -> CometdResult<()> {
+        const KIND: ErrorKind = ErrorKind::Handshake;
+
         let body = json!([{
           "id": self.next_id(),
           "version": "1.0",
@@ -32,11 +34,6 @@ impl CometdClient {
         .to_string();
 
         let request_builder = self.create_request_builder(&self.handshake_endpoint);
-        let raw_body = self
-            .send_request(request_builder, body, |err| {
-                CometdError::handshake_error(None, err)
-            })
-            .await?;
 
         let Message {
             client_id,
@@ -45,14 +42,16 @@ impl CometdClient {
             error,
             advice,
             ..
-        } = serde_json::from_slice::<[Message; 1]>(raw_body.as_ref())
-            .map(|[message]| message)
-            .map_err(|err| CometdError::handshake_error(None, err))?;
+        } = self
+            .send_request_and_parse_json_body::<[Message; 1]>(request_builder, body, KIND)
+            .await
+            .map(|[message]| message)?;
 
         if successful == Some(false) {
-            Err(CometdError::handshake_error(
-                Advice::reconnect(&advice),
-                InnerError::WrongResponse(error.unwrap_or_default().into()),
+            Err(CometdError::wrong_response(
+                KIND,
+                Advice::reconnect(advice),
+                error.unwrap_or_default(),
             ))
         } else if !supported_connection_types
             .iter()
@@ -61,19 +60,18 @@ impl CometdClient {
         {
             let msg = format!(
                 "Server doesn't support long-polling mode: `{supported_connection_types:?}`."
-            )
-            .into();
-            Err(CometdError::handshake_error(
-                None,
-                InnerError::WrongResponse(msg),
-            ))
+            );
+
+            Err(CometdError::wrong_response(KIND, Reconnect::None, msg))
         } else if let Some(client_id) = client_id {
             self.client_id.store_value(client_id);
+
             Ok(())
         } else {
-            Err(CometdError::handshake_error(
-                None,
-                InnerError::WrongResponse("Missing client_id".into()),
+            Err(CometdError::wrong_response(
+                KIND,
+                Reconnect::None,
+                "Missing client_id",
             ))
         }
     }

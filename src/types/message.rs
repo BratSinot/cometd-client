@@ -39,8 +39,8 @@ pub(crate) struct Advice {
 
 impl Advice {
     #[inline(always)]
-    pub(crate) fn reconnect(this: &Option<Self>) -> Option<Reconnect> {
-        this.as_ref().and_then(|advice| advice.reconnect)
+    pub(crate) fn reconnect(this: Option<Self>) -> Reconnect {
+        this.and_then(|advice| advice.reconnect).unwrap_or_default()
     }
 }
 

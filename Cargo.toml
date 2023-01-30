@@ -1,6 +1,6 @@
 [package]
 name = "cometd-client"
-version = "0.2.0"
+version = "0.3.0-alpha.1"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/BratSinot/cometd-client"
@@ -19,15 +19,15 @@ all = ["basic"]
 basic = ["base64"]
 
 [dependencies]
-arc-swap = "1.5"
-cookie = "0.16.*"
-hyper = { version = "0.14", features = ["tcp", "http1", "client"] }
-serde = { version = "1.0", features = ["rc", "derive"] }
-serde_json = "1.0"
-serde_with = { version = "2.1", default-features = false, features = ["macros"] }
-thiserror = "1.0"
+arc-swap = "1.6.*"
+cookie = "0.17.*"
+hyper = { version = "0.14.*", features = ["tcp", "http1", "client"] }
+serde = { version = "1.0.*", features = ["rc", "derive"] }
+serde_json = "1.0.*"
+serde_with = { version = "2.2.*", default-features = false, features = ["macros"] }
+thiserror = "1.0.*"
 tokio = { version = "1", features = ["macros"] }
-url = "2.3"
+url = "2.3.*"
 
 # optional dependencies
 base64 = { version = "0.21.*", optional = true }

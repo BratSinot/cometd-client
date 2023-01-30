@@ -27,7 +27,7 @@ impl Bearer {
 }
 
 impl AccessToken for Bearer {
-    fn get_authorization_header<'a>(&'a self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
         &self.0
     }
 }
