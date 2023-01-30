@@ -33,23 +33,23 @@ impl Basic {
         basic.extend_from_slice(BASIC);
 
         let mut base64_writer = Base64Writer::new(&mut basic, &STANDARD);
-        write!(base64_writer, "{username}:").map_err(CometdError::unexpected_error)?;
+        write!(base64_writer, "{username}:").map_err(CometdError::unexpected)?;
         if let Some(password) = password {
-            write!(base64_writer, "{password}").map_err(CometdError::unexpected_error)?;
+            write!(base64_writer, "{password}").map_err(CometdError::unexpected)?;
         }
         drop(base64_writer);
 
         Ok(Self([(
             AUTHORIZATION.as_str(),
             String::from_utf8(basic)
-                .map_err(CometdError::unexpected_error)?
+                .map_err(CometdError::unexpected)?
                 .into_boxed_str(),
         )]))
     }
 }
 
 impl AccessToken for Basic {
-    fn get_authorization_header<'a>(&'a self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
         &self.0
     }
 }

@@ -10,9 +10,7 @@ use crate::{ext::CookieJarExt, types::AccessToken, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use cookie::{Cookie, CookieJar};
 use core::sync::atomic::{AtomicUsize, Ordering};
-use hyper::{
-    client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Body, Client, Response, Uri,
-};
+use hyper::{client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Client, HeaderMap, Uri};
 use std::borrow::Cow;
 use tokio::sync::RwLock;
 
@@ -83,12 +81,11 @@ impl CometdClient {
     }
 
     #[inline]
-    pub(crate) async fn extract_and_store_cookie(&self, response: &Response<Body>) {
+    pub(crate) async fn extract_and_store_cookie(&self, headers: &HeaderMap) {
         let mut redo_cache = false;
 
         let mut cookies = self.cookies.write().await;
-        for cookie in response
-            .headers()
+        for cookie in headers
             .get_all(SET_COOKIE)
             .iter()
             .map(HeaderValue::to_str)

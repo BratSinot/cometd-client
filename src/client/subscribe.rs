@@ -1,5 +1,5 @@
 use crate::{
-    types::{Advice, CometdError, CometdResult, InnerError, Message},
+    types::{Advice, CometdError, CometdResult, ErrorKind, Message},
     CometdClient,
 };
 use serde::Serialize;
@@ -22,10 +22,12 @@ impl CometdClient {
         &self,
         subscriptions: &[impl Serialize + Send + Sync],
     ) -> CometdResult<()> {
+        const KIND: ErrorKind = ErrorKind::Subscribe;
+
         let client_id = self
             .client_id
             .load_full()
-            .ok_or_else(|| CometdError::subscribe_error(None, InnerError::MissingClientId))?;
+            .ok_or_else(|| CometdError::MissingClientId(KIND))?;
         let body = json!([{
           "id": self.next_id(),
           "channel": "/meta/subscribe",
@@ -35,25 +37,21 @@ impl CometdClient {
         .to_string();
 
         let request_builder = self.create_request_builder(&self.subscribe_endpoint);
-        let raw_body = self
-            .send_request(request_builder, body, |err| {
-                CometdError::subscribe_error(None, err)
-            })
-            .await?;
-
         let Message {
             successful,
             error,
             advice,
             ..
-        } = serde_json::from_slice::<[Message; 1]>(raw_body.as_ref())
-            .map(|[message]| message)
-            .map_err(|err| CometdError::subscribe_error(None, err))?;
+        } = self
+            .send_request_and_parse_json_body::<[Message; 1]>(request_builder, body, KIND)
+            .await
+            .map(|[message]| message)?;
 
         if successful == Some(false) {
-            Err(CometdError::subscribe_error(
-                Advice::reconnect(&advice),
-                InnerError::WrongResponse(error.unwrap_or_default().into()),
+            Err(CometdError::wrong_response(
+                KIND,
+                Advice::reconnect(advice),
+                error.unwrap_or_default(),
             ))
         } else {
             Ok(())

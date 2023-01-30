@@ -2,12 +2,22 @@
 #![allow(clippy::std_instead_of_core)]
 
 use crate::types::Reconnect;
-use hyper::http::uri::InvalidUri;
+use hyper::{http::uri::InvalidUri, Error as HyperError, StatusCode};
+use serde_json::Error as JsonError;
 use std::{borrow::Cow, error::Error};
 use url::ParseError as UrlParseError;
 
 #[allow(missing_docs)]
 pub type CometdResult<T> = Result<T, CometdError>;
+
+#[allow(missing_docs)]
+#[derive(Debug, Copy, Clone)]
+pub enum ErrorKind {
+    Handshake,
+    Subscribe,
+    Connect,
+    Disconnect,
+}
 
 #[allow(missing_docs)]
 #[derive(Debug, thiserror::Error)]
@@ -18,76 +28,35 @@ pub enum CometdError {
     InvalidUrl(#[from] UrlParseError),
     #[error("Url parse error: `{0}`.")]
     InvalidUri(#[from] InvalidUri),
-    #[error("Error during handshake request: `{1}`.")]
-    HandshakeError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
-    #[error("Error during subscribe request: `{1}`.")]
-    SubscribeError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
-    #[error("Error during connect request: `{1}`.")]
-    ConnectError(Reconnect, Box<dyn Error + Sync + Send + 'static>),
-    #[error("Error during disconnect request: `{0}`.")]
-    DisconnectError(Box<dyn Error + Sync + Send + 'static>),
-
+    #[error("Got request error at {0:?}: `{1}`.")]
+    Request(ErrorKind, HyperError),
+    /// Return if status code non ok (in range [200, 300)).
+    /// Body will be empty if got error while fetching body.
+    #[error("Got unsuccessful StatusCode error at {0:?}: `{1}`.")]
+    StatusCode(ErrorKind, StatusCode, Vec<u8>),
+    #[error("Got fetching body error at {0:?}: `{1}`.")]
+    FetchBody(ErrorKind, HyperError),
+    #[error("Got parsing body error at {0:?}: `{1}`.")]
+    ParseBody(ErrorKind, JsonError),
+    #[error("Got wring response at {0:?}: `{2}`")]
+    WrongResponse(ErrorKind, Reconnect, Cow<'static, str>),
+    #[error("Make handshake before {0:?} request.")]
+    MissingClientId(ErrorKind),
     #[error("Got unexpected error: `{0}`")]
     UnexpectedError(Box<dyn Error + Sync + Send + 'static>),
 }
 
 impl CometdError {
-    /// Return advice if server set it in response.
-    #[inline]
-    pub const fn advice(&self) -> Reconnect {
-        match *self {
-            CometdError::MissingEndpoint
-            | CometdError::InvalidUrl(_)
-            | CometdError::InvalidUri(_)
-            | CometdError::DisconnectError(_)
-            | CometdError::UnexpectedError(_) => Reconnect::None,
-            CometdError::HandshakeError(advice, _)
-            | CometdError::SubscribeError(advice, _)
-            | CometdError::ConnectError(advice, _) => advice,
-        }
-    }
-}
-
-impl CometdError {
     #[inline(always)]
-    pub(crate) fn unexpected_error<E: Error + Sync + Send + 'static>(err: E) -> Self {
-        Self::UnexpectedError(err.into())
+    pub(crate) fn wrong_response<E>(kind: ErrorKind, advice: Reconnect, error_message: E) -> Self
+    where
+        Cow<'static, str>: From<E>,
+    {
+        Self::WrongResponse(kind, advice, Cow::from(error_message))
     }
 
     #[inline(always)]
-    pub(crate) fn handshake_error<E: Error + Sync + Send + 'static>(
-        advice: Option<Reconnect>,
-        err: E,
-    ) -> Self {
-        Self::HandshakeError(advice.unwrap_or_default(), err.into())
+    pub(crate) fn unexpected<E: Error + Sync + Send + 'static>(error: E) -> Self {
+        Self::UnexpectedError(Box::from(error))
     }
-
-    #[inline(always)]
-    pub(crate) fn subscribe_error<E: Error + Sync + Send + 'static>(
-        advice: Option<Reconnect>,
-        err: E,
-    ) -> Self {
-        Self::SubscribeError(advice.unwrap_or_default(), err.into())
-    }
-
-    #[inline(always)]
-    pub(crate) fn connect_error<E: Error + Sync + Send + 'static>(
-        advice: Option<Reconnect>,
-        err: E,
-    ) -> Self {
-        Self::ConnectError(advice.unwrap_or_default(), err.into())
-    }
-
-    #[inline(always)]
-    pub(crate) fn disconnect_error<E: Error + Sync + Send + 'static>(err: E) -> Self {
-        Self::DisconnectError(err.into())
-    }
-}
-
-#[derive(Debug, thiserror::Error)]
-pub(crate) enum InnerError {
-    #[error("{0}")]
-    WrongResponse(Cow<'static, str>),
-    #[error("Make handshake before request.")]
-    MissingClientId,
 }

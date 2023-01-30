@@ -1,8 +1,13 @@
 use crate::{
-    types::{CometdError, CometdResult},
+    types::{CometdError, CometdResult, ErrorKind},
     CometdClient,
 };
-use hyper::{body::Bytes, http::request::Builder, Body, Error as HyperError, Response};
+use hyper::{
+    body::to_bytes,
+    http::{request::Builder, response::Parts},
+    Body, HeaderMap, StatusCode,
+};
+use serde::de::DeserializeOwned;
 
 impl CometdClient {
     #[inline]
@@ -10,27 +15,50 @@ impl CometdClient {
         &self,
         request_builder: Builder,
         body: String,
-        map_err: impl Fn(HyperError) -> CometdError + Send,
-    ) -> CometdResult<Response<Body>> {
+        kind: ErrorKind,
+    ) -> CometdResult<(StatusCode, HeaderMap, Body)> {
         let request = request_builder
             .body(body.into())
-            .map_err(CometdError::unexpected_error)?;
+            .map_err(CometdError::unexpected)?;
 
-        self.http_client.request(request).await.map_err(map_err)
+        let (parts, body) = self
+            .http_client
+            .request(request)
+            .await
+            .map_err(|error| CometdError::Request(kind, error))?
+            .into_parts();
+        let Parts {
+            status, headers, ..
+        } = parts;
+
+        Ok((status, headers, body))
     }
 
     #[inline]
-    pub(crate) async fn send_request(
+    pub(crate) async fn send_request_and_parse_json_body<R: DeserializeOwned>(
         &self,
         request_builder: Builder,
         body: String,
-        map_err: impl Fn(HyperError) -> CometdError + Copy + Send,
-    ) -> CometdResult<Bytes> {
-        let response = self
-            .send_request_response(request_builder, body, map_err)
+        kind: ErrorKind,
+    ) -> CometdResult<R> {
+        let (status, headers, body) = self
+            .send_request_response(request_builder, body, kind)
             .await?;
-        self.extract_and_store_cookie(&response).await;
+        let body = to_bytes(body).await.map(Vec::from);
 
-        hyper::body::to_bytes(response).await.map_err(map_err)
+        self.extract_and_store_cookie(&headers).await;
+
+        if status.is_success() {
+            let raw_body = body.map_err(|error| CometdError::FetchBody(kind, error))?;
+
+            serde_json::from_slice::<R>(&raw_body)
+                .map_err(|error| CometdError::ParseBody(kind, error))
+        } else {
+            Err(CometdError::StatusCode(
+                kind,
+                status,
+                body.unwrap_or_default(),
+            ))
+        }
     }
 }
