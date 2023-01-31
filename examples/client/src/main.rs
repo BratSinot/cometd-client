@@ -21,7 +21,7 @@ async fn main() {
     }
 
     client.disconnect().await.unwrap();
-    let _elapsed = tokio::time::timeout(Duration::from_secs(3), async {
+    tokio::time::timeout(Duration::from_secs(3), async {
         while let Ok(false) = rx
             .recv()
             .await
