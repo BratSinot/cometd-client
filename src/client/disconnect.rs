@@ -1,8 +1,4 @@
-use crate::types::Reconnect;
-use crate::{
-    types::{CometdError, CometdResult, ErrorKind},
-    CometdClient,
-};
+use crate::{client::Inner, types::*, CometdClient};
 use hyper::StatusCode;
 use serde_json::json;
 
@@ -12,26 +8,41 @@ impl CometdClient {
     /// # Example
     /// ```rust
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
+    /// # use std::error::Error;
     ///
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() {
+    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
     /// # async {
     ///     client.disconnect().await?;
     /// #   CometdResult::Ok(())
     /// # };
+    /// # }
     /// ```
     pub async fn disconnect(&self) -> CometdResult<()> {
-        const KIND: ErrorKind = ErrorKind::Disconnect;
-
         let client_id = self
+            .0
             .client_id
             .swap(None)
-            .ok_or_else(|| CometdError::MissingClientId(KIND))?;
+            .ok_or_else(|| CometdError::MissingClientId(ErrorKind::Disconnect))?;
         let body = json!([{
-          "id": self.next_id(),
+          "id": self.0.next_id(),
           "channel": "/meta/disconnect",
           "clientId": client_id
         }])
         .to_string();
+
+        self.0
+            .commands_tx
+            .send(Command::Disconnect(body))
+            .await
+            .map_err(CometdError::unexpected)
+    }
+}
+
+impl Inner {
+    pub(crate) async fn _disconnect(&self, body: String) -> CometdResult<()> {
+        const KIND: ErrorKind = ErrorKind::Disconnect;
 
         let request_builder = self.create_request_builder(&self.disconnect_endpoint);
 

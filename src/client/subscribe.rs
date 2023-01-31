@@ -1,7 +1,4 @@
-use crate::{
-    types::{Advice, CometdError, CometdResult, ErrorKind, Message},
-    CometdClient,
-};
+use crate::{client::Inner, types::*, CometdClient};
 use serde::Serialize;
 use serde_json::json;
 
@@ -11,30 +8,44 @@ impl CometdClient {
     /// # Example
     /// ```rust
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() {
     /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
     /// # async {
     ///     client.subscribe(&["/topic0", "/topic1"]).await?;
     /// #   CometdResult::Ok(())
     /// # };
+    /// # }
     /// ```
     pub async fn subscribe(
         &self,
         subscriptions: &[impl Serialize + Send + Sync],
     ) -> CometdResult<()> {
-        const KIND: ErrorKind = ErrorKind::Subscribe;
-
         let client_id = self
+            .0
             .client_id
             .load_full()
-            .ok_or_else(|| CometdError::MissingClientId(KIND))?;
+            .ok_or_else(|| CometdError::MissingClientId(ErrorKind::Subscribe))?;
+
         let body = json!([{
-          "id": self.next_id(),
+          "id": self.0.next_id(),
           "channel": "/meta/subscribe",
           "subscription": subscriptions,
           "clientId": client_id
         }])
         .to_string();
+
+        self.0
+            .commands_tx
+            .send(Command::Subscribe(body))
+            .await
+            .map_err(CometdError::unexpected)
+    }
+}
+
+impl Inner {
+    pub(crate) async fn _subscribe(&self, body: String) -> CometdResult<()> {
+        const KIND: ErrorKind = ErrorKind::Subscribe;
 
         let request_builder = self.create_request_builder(&self.subscribe_endpoint);
         let Message {

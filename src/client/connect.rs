@@ -1,28 +1,8 @@
-use crate::types::Reconnect;
-use crate::{
-    types::{Advice, CometdError, CometdResult, Data, ErrorKind, Message},
-    CometdClient,
-};
-use serde::de::DeserializeOwned;
+use crate::{client::Inner, types::*};
 use serde_json::json;
 
-impl CometdClient {
-    /// Send connect request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     let data = client.connect::<serde_json::Value>().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn connect<Msg>(&self) -> CometdResult<Vec<Data<Msg>>>
-    where
-        Msg: DeserializeOwned,
-    {
+impl Inner {
+    pub(crate) async fn _connect(&self) -> CometdResult<Vec<Data>> {
         const KIND: ErrorKind = ErrorKind::Connect;
 
         let client_id = self
@@ -66,10 +46,7 @@ impl CometdClient {
                     .into_iter()
                     .map(|message| {
                         let Message { channel, data, .. } = message;
-                        let message = data
-                            .map(serde_json::from_value::<Msg>)
-                            .transpose()
-                            .map_err(|error| CometdError::ParseBody(KIND, error))?;
+                        let message = data;
 
                         Ok::<_, CometdError>(Data { channel, message })
                     })

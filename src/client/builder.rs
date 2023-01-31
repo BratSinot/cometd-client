@@ -1,14 +1,17 @@
 use crate::{
-    consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
+    client::Inner,
+    consts::*,
     ext::CookieJarExt,
     types::{AccessToken, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
+use async_broadcast::broadcast;
 use cookie::{Cookie, CookieJar};
 use hyper::Client;
 use std::borrow::Cow;
-use tokio::sync::RwLock;
+use std::sync::Arc;
+use tokio::sync::{mpsc, RwLock};
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -23,6 +26,8 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     interval_ms: Option<u64>,
     access_token: Option<Box<dyn AccessToken>>,
     cookies: Option<CookieJar>,
+    commands_channel_capacity: usize,
+    events_channel_capacity: usize,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -39,6 +44,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms: None,
             access_token: None,
             cookies: None,
+            commands_channel_capacity: DEFAULT_CHANNEL_CAPACITY,
+            events_channel_capacity: DEFAULT_CHANNEL_CAPACITY,
         }
     }
 
@@ -65,6 +72,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms,
             access_token,
             cookies,
+            commands_channel_capacity: comands_channel_capacity,
+            events_channel_capacity,
         } = self;
 
         let handshake_endpoint =
@@ -85,11 +94,15 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             .map(CookieJarExt::make_string)
             .map(ArcSwapOption::from_pointee)
             .unwrap_or_default();
-        let cookies = cookies.unwrap_or_default();
+        let cookies = RwLock::new(cookies.unwrap_or_default());
         let client_id = Default::default();
         let http_client = Client::builder().build_http();
 
-        Ok(CometdClient {
+        let (event_tx, mut event_rx) = broadcast(events_channel_capacity);
+        event_rx.set_await_active(false);
+
+        let (commands_tx, commands_rx) = mpsc::channel(comands_channel_capacity);
+        let inner = Arc::new(Inner {
             handshake_endpoint,
             subscribe_endpoint,
             connect_endpoint,
@@ -98,11 +111,17 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms,
             id,
             access_token,
-            cookies: RwLock::new(cookies),
+            cookies,
             cookies_string_cache,
             client_id,
             http_client,
-        })
+            commands_tx,
+            inactive_event_rx: event_rx.deactivate(),
+        });
+
+        Arc::clone(&inner).spawn_command_listener(commands_rx, event_tx);
+
+        Ok(CometdClient(inner))
     }
 
     /// Set cometd server handshake url path.
@@ -239,5 +258,21 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies: Some(cookie_jar),
             ..self
         }
+    }
+
+    /// Set capacity of `Event` channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn events_channel_capacity(mut self, events_channel_capacity: usize) -> Self {
+        self.events_channel_capacity = events_channel_capacity;
+        self
+    }
+
+    /// Set capacity of internal commands channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn commands_channel_capacity(mut self, commands_channel_capacity: usize) -> Self {
+        self.commands_channel_capacity = commands_channel_capacity;
+        self
     }
 }

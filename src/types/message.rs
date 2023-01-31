@@ -4,11 +4,11 @@ use serde_with::skip_serializing_none;
 
 /// Contains channel name of message received from cometd server.
 #[derive(Debug)]
-pub struct Data<Msg> {
+pub struct Data {
     /// Channel name from which was received message.
     pub channel: Option<String>,
     /// Received message.
-    pub message: Option<Msg>,
+    pub message: Option<JsonValue>,
 }
 
 #[skip_serializing_none]

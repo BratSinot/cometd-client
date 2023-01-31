@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 ### Change
 
 - Rework `CometdError`.
+- Use channel instead of callbacks.
 
 ## [0.2.0]
 

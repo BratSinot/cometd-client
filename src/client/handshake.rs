@@ -1,7 +1,4 @@
-use crate::{
-    types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
-    ArcSwapOptionExt, CometdClient,
-};
+use crate::{client::Inner, types::*, ArcSwapOptionExt, CometdClient};
 use serde_json::json;
 
 impl CometdClient {
@@ -10,14 +7,25 @@ impl CometdClient {
     /// # Example
     /// ```rust
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
     ///
-    /// # async {
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() -> CometdResult<()> {
+    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
     ///     client.handshake().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
+    /// #   Ok(())
+    /// # }
     /// ```
     pub async fn handshake(&self) -> CometdResult<()> {
+        self.0
+            .commands_tx
+            .send(Command::Handshake)
+            .await
+            .map_err(CometdError::unexpected)
+    }
+}
+
+impl Inner {
+    pub(crate) async fn _handshake(&self) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Handshake;
 
         let body = json!([{

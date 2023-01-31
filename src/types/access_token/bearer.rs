@@ -7,10 +7,13 @@ use hyper::header::AUTHORIZATION;
 /// # Example
 /// ```rust
 /// # use cometd_client::{types::access_token::Bearer, CometdClientBuilder};
+/// # #[tokio::main(flavor = "current_thread")]
+/// # async fn main() {
 /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
 ///
 ///     let access_token = Bearer::new("f0596451-af4d-40f4-a290-b5e8372c110b");
 ///     client.update_access_token(access_token);
+/// # }
 /// ```
 #[derive(Debug)]
 pub struct Bearer([(&'static str, Box<str>); 1]);
