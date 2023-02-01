@@ -1,10 +1,7 @@
-use crate::types::Reconnect;
-use crate::{
-    types::{Advice, CometdError, CometdResult, Data, ErrorKind, Message},
-    CometdClient,
-};
+use crate::{types::*, CometdClient};
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::sync::Arc;
 
 impl CometdClient {
     /// Send connect request.
@@ -19,7 +16,7 @@ impl CometdClient {
     /// #   CometdResult::Ok(())
     /// # };
     /// ```
-    pub async fn connect<Msg>(&self) -> CometdResult<Vec<Data<Msg>>>
+    pub async fn connect<Msg>(&self) -> CometdResult<Arc<[Data<Msg>]>>
     where
         Msg: DeserializeOwned,
     {
@@ -69,11 +66,12 @@ impl CometdClient {
                         let message = data
                             .map(serde_json::from_value::<Msg>)
                             .transpose()
+                            .map_err(Arc::new)
                             .map_err(|error| CometdError::ParseBody(KIND, error))?;
 
                         Ok::<_, CometdError>(Data { channel, message })
                     })
-                    .collect::<CometdResult<Vec<_>>>()?;
+                    .collect::<CometdResult<_>>()?;
 
                 Ok(data)
             }

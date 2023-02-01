@@ -4,7 +4,7 @@
 use crate::types::Reconnect;
 use hyper::{http::uri::InvalidUri, Error as HyperError, StatusCode};
 use serde_json::Error as JsonError;
-use std::{borrow::Cow, error::Error};
+use std::{borrow::Cow, error::Error, sync::Arc};
 use url::ParseError as UrlParseError;
 
 #[allow(missing_docs)]
@@ -20,30 +20,30 @@ pub enum ErrorKind {
 }
 
 #[allow(missing_docs)]
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum CometdError {
     #[error("Endpoint wasn't set in builder.")]
     MissingEndpoint,
     #[error("Url parse error: `{0}`.")]
     InvalidUrl(#[from] UrlParseError),
     #[error("Url parse error: `{0}`.")]
-    InvalidUri(#[from] InvalidUri),
+    InvalidUri(#[from] Arc<InvalidUri>),
     #[error("Got request error at {0:?}: `{1}`.")]
-    Request(ErrorKind, HyperError),
+    Request(ErrorKind, Arc<HyperError>),
     /// Return if status code non ok (in range [200, 300)).
     /// Body will be empty if got error while fetching body.
     #[error("Got unsuccessful StatusCode error at {0:?}: `{1}`.")]
     StatusCode(ErrorKind, StatusCode, Vec<u8>),
     #[error("Got fetching body error at {0:?}: `{1}`.")]
-    FetchBody(ErrorKind, HyperError),
+    FetchBody(ErrorKind, Arc<HyperError>),
     #[error("Got parsing body error at {0:?}: `{1}`.")]
-    ParseBody(ErrorKind, JsonError),
+    ParseBody(ErrorKind, Arc<JsonError>),
     #[error("Got wring response at {0:?}: `{2}`")]
     WrongResponse(ErrorKind, Reconnect, Cow<'static, str>),
     #[error("Make handshake before {0:?} request.")]
     MissingClientId(ErrorKind),
     #[error("Got unexpected error: `{0}`")]
-    UnexpectedError(Box<dyn Error + Sync + Send + 'static>),
+    UnexpectedError(Arc<dyn Error + Sync + Send + 'static>),
 }
 
 impl CometdError {
@@ -57,6 +57,6 @@ impl CometdError {
 
     #[inline(always)]
     pub(crate) fn unexpected<E: Error + Sync + Send + 'static>(error: E) -> Self {
-        Self::UnexpectedError(Box::from(error))
+        Self::UnexpectedError(Arc::from(error))
     }
 }

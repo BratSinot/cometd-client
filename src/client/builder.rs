@@ -1,14 +1,9 @@
-use crate::{
-    consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
-    ext::CookieJarExt,
-    types::{AccessToken, CometdResult},
-    CometdClient,
-};
-use arc_swap::ArcSwapOption;
+mod build;
+mod build_channel;
+
+use crate::{consts::*, types::AccessToken};
 use cookie::{Cookie, CookieJar};
-use hyper::Client;
 use std::borrow::Cow;
-use tokio::sync::RwLock;
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -23,6 +18,8 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     interval_ms: Option<u64>,
     access_token: Option<Box<dyn AccessToken>>,
     cookies: Option<CookieJar>,
+    commands_channel_capacity: usize,
+    events_channel_capacity: usize,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -39,70 +36,9 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms: None,
             access_token: None,
             cookies: None,
+            commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
+            events_channel_capacity: DEFAULT_EVENT_CHANNEL_CAPACITY,
         }
-    }
-
-    /// Return a `CometdClient`.
-    ///
-    /// # Example
-    /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
-    /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
-    ///     .build()?;
-    /// # Ok(()) };
-    /// ```
-    #[inline(always)]
-    pub fn build(self) -> CometdResult<CometdClient> {
-        let Self {
-            endpoint: base_url,
-            handshake_base_path,
-            subscribe_base_path,
-            connect_base_path,
-            disconnect_base_path,
-            timeout_ms,
-            interval_ms,
-            access_token,
-            cookies,
-        } = self;
-
-        let handshake_endpoint =
-            String::from(base_url.join(handshake_base_path)?.join("handshake")?).try_into()?;
-        let subscribe_endpoint = String::from(base_url.join(subscribe_base_path)?).try_into()?;
-        let connect_endpoint =
-            String::from(base_url.join(connect_base_path)?.join("connect")?).try_into()?;
-        let disconnect_endpoint =
-            String::from(base_url.join(disconnect_base_path)?.join("disconnect")?).try_into()?;
-        let timeout_ms = timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS);
-        let interval_ms = interval_ms.unwrap_or(DEFAULT_INTERVAL_MS);
-        let id = Default::default();
-        let access_token = access_token
-            .map(ArcSwapOption::from_pointee)
-            .unwrap_or_default();
-        let cookies_string_cache = cookies
-            .as_ref()
-            .map(CookieJarExt::make_string)
-            .map(ArcSwapOption::from_pointee)
-            .unwrap_or_default();
-        let cookies = cookies.unwrap_or_default();
-        let client_id = Default::default();
-        let http_client = Client::builder().build_http();
-
-        Ok(CometdClient {
-            handshake_endpoint,
-            subscribe_endpoint,
-            connect_endpoint,
-            disconnect_endpoint,
-            timeout_ms,
-            interval_ms,
-            id,
-            access_token,
-            cookies: RwLock::new(cookies),
-            cookies_string_cache,
-            client_id,
-            http_client,
-        })
     }
 
     /// Set cometd server handshake url path.
@@ -239,5 +175,21 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies: Some(cookie_jar),
             ..self
         }
+    }
+
+    /// Set capacity of `Event` channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn events_channel_capacity(mut self, events_channel_capacity: usize) -> Self {
+        self.events_channel_capacity = events_channel_capacity;
+        self
+    }
+
+    /// Set capacity of internal commands channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn commands_channel_capacity(mut self, commands_channel_capacity: usize) -> Self {
+        self.commands_channel_capacity = commands_channel_capacity;
+        self
     }
 }

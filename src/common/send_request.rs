@@ -8,6 +8,7 @@ use hyper::{
     Body, HeaderMap, StatusCode,
 };
 use serde::de::DeserializeOwned;
+use std::sync::Arc;
 
 impl CometdClient {
     #[inline]
@@ -25,6 +26,7 @@ impl CometdClient {
             .http_client
             .request(request)
             .await
+            .map_err(Arc::new)
             .map_err(|error| CometdError::Request(kind, error))?
             .into_parts();
         let Parts {
@@ -49,9 +51,12 @@ impl CometdClient {
         self.extract_and_store_cookie(&headers).await;
 
         if status.is_success() {
-            let raw_body = body.map_err(|error| CometdError::FetchBody(kind, error))?;
+            let raw_body = body
+                .map_err(Arc::new)
+                .map_err(|error| CometdError::FetchBody(kind, error))?;
 
             serde_json::from_slice::<R>(&raw_body)
+                .map_err(Arc::new)
                 .map_err(|error| CometdError::ParseBody(kind, error))
         } else {
             Err(CometdError::StatusCode(
