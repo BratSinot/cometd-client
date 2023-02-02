@@ -44,8 +44,6 @@ pub enum CometdError {
     MissingClientId(ErrorKind),
     #[error("Got unexpected error: `{0}`")]
     Unexpected(Box<dyn Error + Sync + Send + 'static>),
-    #[error("Got unexpected internal error: `{0}`")]
-    Internal(&'static str),
 }
 
 impl CometdError {

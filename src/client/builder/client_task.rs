@@ -38,7 +38,7 @@ async fn cmd_connect_loop<Msg, F, Fut>(
     }
     use Res::*;
 
-    let error = loop {
+    loop {
         let res = select! {
             biased;
             cmd = cmd_rx.recv() => Left(cmd),
@@ -48,17 +48,20 @@ async fn cmd_connect_loop<Msg, F, Fut>(
         match res {
             Left(Some(Command::Subscribe(subscriptions))) => {
                 if let Err(error) = inner.subscribe(subscriptions).await {
-                    break error;
+                    broadcast_event(CometdClientEvent::error(error)).await;
+                    break;
                 }
             }
             Right(Ok(data)) => broadcast_event(CometdClientEvent::message(data)).await,
             // communication errors
-            Left(None) => break CometdError::Internal("internal command channel was closed"),
-            Right(Err(error)) => break error,
+            Left(None) => break,
+            Right(Err(error)) => {
+                broadcast_event(CometdClientEvent::error(error)).await;
+                break;
+            }
         }
-    };
+    }
 
-    broadcast_event(CometdClientEvent::error(error)).await;
     if let Err(error) = inner.disconnect().await {
         broadcast_event(CometdClientEvent::error(error)).await;
     }
