@@ -43,7 +43,9 @@ pub enum CometdError {
     #[error("Make handshake before {0:?} request.")]
     MissingClientId(ErrorKind),
     #[error("Got unexpected error: `{0}`")]
-    UnexpectedError(Box<dyn Error + Sync + Send + 'static>),
+    Unexpected(Box<dyn Error + Sync + Send + 'static>),
+    #[error("Got unexpected internal error: `{0}`")]
+    Internal(&'static str),
 }
 
 impl CometdError {
@@ -57,6 +59,6 @@ impl CometdError {
 
     #[inline(always)]
     pub(crate) fn unexpected<E: Error + Sync + Send + 'static>(error: E) -> Self {
-        Self::UnexpectedError(Box::from(error))
+        Self::Unexpected(Box::from(error))
     }
 }

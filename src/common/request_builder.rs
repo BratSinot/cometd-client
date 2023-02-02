@@ -1,4 +1,4 @@
-use crate::{consts::APPLICATION_JSON, types::AccessToken, CometdClient};
+use crate::{consts::APPLICATION_JSON, types::AccessToken, CometdClientInner};
 use hyper::{
     header::{CONTENT_TYPE, COOKIE},
     http::request::Builder,
@@ -6,7 +6,7 @@ use hyper::{
 };
 use std::sync::Arc;
 
-impl CometdClient {
+impl CometdClientInner {
     #[inline]
     pub(crate) fn create_request_builder(&self, uri: &Uri) -> Builder {
         let mut ret = Request::builder()

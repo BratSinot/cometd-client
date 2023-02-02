@@ -1,18 +1,24 @@
 use cometd_client::CometdClientBuilder;
 use serde_json::Value as JsonValue;
+use std::time::Duration;
 
 #[tokio::main]
 async fn main() {
     let endpoint = "http://[::1]:1025/notifications/".parse().unwrap();
-    let client = CometdClientBuilder::new(&endpoint).build().unwrap();
+    let client = CometdClientBuilder::new(&endpoint)
+        .build::<JsonValue>()
+        .unwrap();
+    let mut rx = client.rx();
 
-    client.handshake().await.unwrap();
-    client.subscribe(&["/topic0", "/topic1"]).await.unwrap();
+    client.subscribe(&["/topic0", "/topic1"]).await;
 
     for _ in 0..3 {
-        let response = client.connect::<JsonValue>().await;
+        let response = rx.recv().await;
+        assert!(response.is_ok());
         println!("response: `{response:?}`.");
     }
 
-    client.disconnect().await.unwrap();
+    drop(client);
+
+    tokio::time::sleep(Duration::from_secs(5)).await;
 }

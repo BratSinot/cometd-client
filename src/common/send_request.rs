@@ -1,6 +1,6 @@
 use crate::{
     types::{CometdError, CometdResult, ErrorKind},
-    CometdClient,
+    CometdClientInner,
 };
 use hyper::{
     body::to_bytes,
@@ -9,7 +9,7 @@ use hyper::{
 };
 use serde::de::DeserializeOwned;
 
-impl CometdClient {
+impl CometdClientInner {
     #[inline]
     pub(crate) async fn send_request_response(
         &self,

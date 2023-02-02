@@ -12,10 +12,15 @@ const BASIC: &[u8] = b"Basic ";
 /// # Example
 /// ```rust
 /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
-/// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
 ///
-///     let access_token = Basic::create("username", Some("password")).unwrap();
-///     client.update_access_token(access_token);
+/// # async {
+///     let access_token = Basic::create("username", Some("password"))?;
+///
+///     let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse()?)
+///         .access_token(access_token)
+///         .build::<()>()?;
+/// # Result::<_, Box<dyn std::error::Error>>::Ok(())
+/// # };
 /// ```
 #[derive(Debug)]
 pub struct Basic([(&'static str, Box<str>); 1]);

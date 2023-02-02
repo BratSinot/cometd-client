@@ -6,17 +6,24 @@ mod subscribe;
 
 pub use builder::*;
 
-use crate::{ext::CookieJarExt, types::AccessToken, ArcSwapOptionExt};
+use crate::{ext::CookieJarExt, types::*, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use cookie::{Cookie, CookieJar};
 use core::sync::atomic::{AtomicUsize, Ordering};
 use hyper::{client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Client, HeaderMap, Uri};
-use std::borrow::Cow;
+use serde::Serialize;
+use serde_json::json;
 use tokio::sync::RwLock;
 
 /// A cometd Client.
 #[derive(Debug)]
-pub struct CometdClient {
+pub struct CometdClient<Msg> {
+    cmd_tx: CmdSender,
+    inactive_event_rx: InactiveEventReceiver<Msg>,
+}
+
+#[derive(Debug)]
+pub(crate) struct CometdClientInner {
     handshake_endpoint: Uri,
     subscribe_endpoint: Uri,
     connect_endpoint: Uri,
@@ -26,55 +33,56 @@ pub struct CometdClient {
 
     id: AtomicUsize,
     pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,
-    pub(crate) cookies: RwLock<CookieJar>,
+    cookies: RwLock<CookieJar>,
     pub(crate) cookies_string_cache: ArcSwapOption<Box<str>>,
     client_id: ArcSwapOption<Box<str>>,
     pub(crate) http_client: Client<HttpConnector>,
 }
 
-impl CometdClient {
-    /// Method for update access token.
+impl<Msg> CometdClient<Msg> {
+    /// Return client event receiver channel.
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
+    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() {
+    /// #   let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build::<()>().unwrap();
+    ///     let mut event_rx = client.rx();
+    ///     
+    ///     client.subscribe(&["/topic0"]).await;
     ///
-    ///     let access_token = Basic::create("username", Some("password")).unwrap();
-    ///     client.update_access_token(access_token);
+    ///     while let Ok(event) = event_rx.recv().await {
+    ///         println!("Got cometd client event: `{event:?}`.");
+    ///     }
+    /// # }
     /// ```
     #[inline(always)]
-    pub fn update_access_token<AT>(&self, access_token: AT)
-    where
-        AT: AccessToken + 'static,
-    {
-        self.access_token.store_value(Box::new(access_token));
+    pub fn rx(&self) -> EventReceiver<Msg> {
+        self.inactive_event_rx.activate_cloned()
     }
 
-    /// Method for adding cookies.
+    /// Ask client command loop to send subscribe request.
     ///
     /// # Example
     /// ```rust
-    /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    ///     client.add_cookies([("a", "1")]);
+    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
+    /// # #[tokio::main(flavor = "current_thread")]
+    /// # async fn main() {
+    /// #   let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build::<()>().unwrap();
+    ///     client.subscribe(&["/topic0", "/topic1"]).await;
+    /// # }
     /// ```
     #[inline(always)]
-    pub async fn add_cookies<N, V>(&self, cookies: impl IntoIterator<Item = (N, V)> + Send)
-    where
-        N: Into<Cow<'static, str>>,
-        V: Into<Cow<'static, str>>,
-    {
-        let mut cookie_jar = self.cookies.write().await;
-        for (name, value) in cookies {
-            cookie_jar.add(Cookie::new(name, value));
-        }
-
-        self.cookies_string_cache
-            .store_value(cookie_jar.make_string());
+    pub async fn subscribe(&self, subscriptions: &[impl Serialize + Send + Sync]) {
+        let _ = self
+            .cmd_tx
+            .send(Command::Subscribe(json!(subscriptions)))
+            .await;
     }
+}
 
+impl CometdClientInner {
     #[inline(always)]
     pub(crate) fn next_id(&self) -> String {
         self.id.fetch_add(1, Ordering::Relaxed).to_string()

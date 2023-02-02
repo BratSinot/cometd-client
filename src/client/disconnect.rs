@@ -1,25 +1,12 @@
-use crate::types::Reconnect;
 use crate::{
-    types::{CometdError, CometdResult, ErrorKind},
-    CometdClient,
+    types::{CometdError, CometdResult, ErrorKind, Reconnect},
+    CometdClientInner,
 };
 use hyper::StatusCode;
 use serde_json::json;
 
-impl CometdClient {
-    /// Send disconnect request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     client.disconnect().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn disconnect(&self) -> CometdResult<()> {
+impl CometdClientInner {
+    pub(crate) async fn disconnect(&self) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Disconnect;
 
         let client_id = self

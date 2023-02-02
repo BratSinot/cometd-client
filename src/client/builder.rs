@@ -1,14 +1,22 @@
+mod client_task;
+
+use crate::client::CometdClientInner;
 use crate::{
-    consts::{DEFAULT_INTERVAL_MS, DEFAULT_TIMEOUT_MS},
+    consts::{
+        DEFAULT_COMMAND_CHANNEL_CAPACITY, DEFAULT_EVENT_CHANNEL_CAPACITY, DEFAULT_INTERVAL_MS,
+        DEFAULT_TIMEOUT_MS,
+    },
     ext::CookieJarExt,
     types::{AccessToken, CometdResult},
     CometdClient,
 };
 use arc_swap::ArcSwapOption;
+use async_broadcast::broadcast;
 use cookie::{Cookie, CookieJar};
 use hyper::Client;
+use serde::de::DeserializeOwned;
 use std::borrow::Cow;
-use tokio::sync::RwLock;
+use tokio::sync::{mpsc, RwLock};
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -23,6 +31,8 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     interval_ms: Option<u64>,
     access_token: Option<Box<dyn AccessToken>>,
     cookies: Option<CookieJar>,
+    commands_channel_capacity: usize,
+    events_channel_capacity: usize,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -39,6 +49,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms: None,
             access_token: None,
             cookies: None,
+            commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
+            events_channel_capacity: DEFAULT_EVENT_CHANNEL_CAPACITY,
         }
     }
 
@@ -46,15 +58,20 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     ///
     /// # Example
     /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
+    /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
+    /// # #[derive(serde::Deserialize)]
+    /// # struct Data { msg: String, }
     /// let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
     ///     .build()?;
+    /// # let client: CometdClient<Data> = client;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
-    pub fn build(self) -> CometdResult<CometdClient> {
+    pub fn build<Msg>(self) -> CometdResult<CometdClient<Msg>>
+    where
+        Msg: DeserializeOwned + Send + Sync + 'static,
+    {
         let Self {
             endpoint: base_url,
             handshake_base_path,
@@ -65,6 +82,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             interval_ms,
             access_token,
             cookies,
+            commands_channel_capacity,
+            events_channel_capacity,
         } = self;
 
         let handshake_endpoint =
@@ -89,7 +108,11 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         let client_id = Default::default();
         let http_client = Client::builder().build_http();
 
-        Ok(CometdClient {
+        let (cmd_tx, cmd_rx) = mpsc::channel(commands_channel_capacity);
+        let (event_tx, mut event_rx) = broadcast(events_channel_capacity);
+        event_rx.set_await_active(false);
+
+        let inner = CometdClientInner {
             handshake_endpoint,
             subscribe_endpoint,
             connect_endpoint,
@@ -102,6 +125,13 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies_string_cache,
             client_id,
             http_client,
+        };
+
+        client_task::spawn(inner, cmd_rx, event_tx);
+
+        Ok(CometdClient {
+            cmd_tx,
+            inactive_event_rx: event_rx.deactivate(),
         })
     }
 
@@ -109,12 +139,15 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     ///
     /// # Example
     /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
+    /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
-    ///     .handshake_base_path("hand/") // http://[::1]:1025/notifications/hand/handshake
-    ///     .build()?;
+    /// # #[derive(serde::Deserialize)]
+    /// # struct Data { msg: String, }
+    ///
+    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///         .handshake_base_path("hand/") // http://[::1]:1025/notifications/hand/handshake
+    ///         .build()?;
+    /// # let app: CometdClient<Data> = app;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -128,12 +161,15 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     ///
     /// # Example
     /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
+    /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
-    ///     .subscribe_base_path("sub/") // http://[::1]:1025/notifications/sub/
-    ///     .build()?;
+    /// # #[derive(serde::Deserialize)]
+    /// # struct Data { msg: String, }
+    ///
+    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///         .subscribe_base_path("sub/") // http://[::1]:1025/notifications/sub/
+    ///         .build()?;
+    /// # let app: CometdClient<Data> = app;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -147,12 +183,14 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     ///
     /// # Example
     /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
+    /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
-    ///     .connect_base_path("con/") // http://[::1]:1025/notifications/con/connect
-    ///     .build()?;
+    /// # #[derive(serde::Deserialize)]
+    /// # struct Data { msg: String, }
+    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///         .connect_base_path("con/") // http://[::1]:1025/notifications/con/connect
+    ///         .build()?;
+    /// # let app: CometdClient<Data> = app;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -166,12 +204,14 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     ///
     /// # Example
     /// ```rust
-    /// use cometd_client::CometdClientBuilder;
-    ///
+    /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
-    /// let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
-    ///     .connect_base_path("discon/") // http://[::1]:1025/notifications/discon/disconnect
-    ///     .build()?;
+    /// # #[derive(serde::Deserialize)]
+    /// # struct Data { msg: String, }
+    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///         .disconnect_base_path("con/") // http://[::1]:1025/notifications/discon/disconnect
+    ///         .build()?;
+    /// # let app: CometdClient<Data> = app;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -239,5 +279,21 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies: Some(cookie_jar),
             ..self
         }
+    }
+
+    /// Set capacity of `Event` channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn events_channel_capacity(mut self, events_channel_capacity: usize) -> Self {
+        self.events_channel_capacity = events_channel_capacity;
+        self
+    }
+
+    /// Set capacity of internal commands channel.
+    #[inline(always)]
+    #[must_use]
+    pub const fn commands_channel_capacity(mut self, commands_channel_capacity: usize) -> Self {
+        self.commands_channel_capacity = commands_channel_capacity;
+        self
     }
 }
