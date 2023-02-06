@@ -38,10 +38,11 @@ mod client;
 mod common;
 mod consts;
 mod ext;
+mod sugar;
 
 /// Contains various structs, enums and traits.
 pub mod types;
 
 pub use client::*;
 
-pub(crate) use ext::*;
+pub(crate) use {ext::*, sugar::*};

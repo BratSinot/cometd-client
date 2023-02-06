@@ -38,7 +38,7 @@ pub enum CometdError {
     FetchBody(ErrorKind, HyperError),
     #[error("Got parsing body error at {0:?}: `{1}`.")]
     ParseBody(ErrorKind, JsonError),
-    #[error("Got wring response at {0:?}: `{2}`")]
+    #[error("Got wrong response at {0:?}: `{2}`")]
     WrongResponse(ErrorKind, Reconnect, Cow<'static, str>),
     #[error("Make handshake before {0:?} request.")]
     MissingClientId(ErrorKind),

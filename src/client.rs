@@ -30,6 +30,7 @@ pub(crate) struct CometdClientInner {
     disconnect_endpoint: Uri,
     timeout_ms: u64,
     interval_ms: u64,
+    number_of_retries: usize,
 
     id: AtomicUsize,
     pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,

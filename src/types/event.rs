@@ -21,11 +21,6 @@ impl<Msg> Clone for CometdClientEvent<Msg> {
 
 impl<Msg> CometdClientEvent<Msg> {
     #[inline(always)]
-    pub(crate) fn message(data: Arc<[Data<Msg>]>) -> Self {
-        Self::Message(data)
-    }
-
-    #[inline(always)]
     pub(crate) fn error(error: CometdError) -> Self {
         Self::Error(Arc::new(error))
     }

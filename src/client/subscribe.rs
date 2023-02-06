@@ -5,7 +5,7 @@ use crate::{
 use serde_json::{json, Value as JsonValue};
 
 impl CometdClientInner {
-    pub(crate) async fn subscribe(&self, subscriptions: JsonValue) -> CometdResult<()> {
+    pub(crate) async fn subscribe(&self, subscriptions: &JsonValue) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Subscribe;
 
         let client_id = self

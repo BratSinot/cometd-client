@@ -1,14 +1,10 @@
 mod client_task;
 
-use crate::client::CometdClientInner;
 use crate::{
-    consts::{
-        DEFAULT_COMMAND_CHANNEL_CAPACITY, DEFAULT_EVENT_CHANNEL_CAPACITY, DEFAULT_INTERVAL_MS,
-        DEFAULT_TIMEOUT_MS,
-    },
+    consts::*,
     ext::CookieJarExt,
     types::{AccessToken, CometdResult},
-    CometdClient,
+    CometdClient, CometdClientInner,
 };
 use arc_swap::ArcSwapOption;
 use async_broadcast::broadcast;
@@ -33,6 +29,7 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     cookies: Option<CookieJar>,
     commands_channel_capacity: usize,
     events_channel_capacity: usize,
+    number_of_retries: usize,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -51,6 +48,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies: None,
             commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
             events_channel_capacity: DEFAULT_EVENT_CHANNEL_CAPACITY,
+            number_of_retries: DEFAULT_NUMBER_OF_REHANDSHAKE,
         }
     }
 
@@ -84,6 +82,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies,
             commands_channel_capacity,
             events_channel_capacity,
+            number_of_retries,
         } = self;
 
         let handshake_endpoint =
@@ -119,6 +118,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             disconnect_endpoint,
             timeout_ms,
             interval_ms,
+            number_of_retries,
             id,
             access_token,
             cookies: RwLock::new(cookies),
@@ -240,10 +240,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set `interval` option in handshake request.
     #[inline(always)]
     #[must_use]
-    pub fn access_token<AT>(self, access_token: AT) -> Self
-    where
-        AT: AccessToken + 'static,
-    {
+    pub fn access_token(self, access_token: impl AccessToken) -> Self {
         Self {
             access_token: Some(Box::new(access_token)),
             ..self
@@ -294,6 +291,14 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     #[must_use]
     pub const fn commands_channel_capacity(mut self, commands_channel_capacity: usize) -> Self {
         self.commands_channel_capacity = commands_channel_capacity;
+        self
+    }
+
+    /// Set number of retries for request which got `Retry` or `Handshake` advice.
+    #[inline(always)]
+    #[must_use]
+    pub const fn number_of_retries(mut self, number_of_retries: usize) -> Self {
+        self.number_of_retries = number_of_retries;
         self
     }
 }
