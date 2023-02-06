@@ -9,6 +9,7 @@ use crate::{
 use arc_swap::ArcSwapOption;
 use async_broadcast::broadcast;
 use cookie::{Cookie, CookieJar};
+use core::time::Duration;
 use hyper::Client;
 use serde::de::DeserializeOwned;
 use std::borrow::Cow;
@@ -30,6 +31,7 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     commands_channel_capacity: usize,
     events_channel_capacity: usize,
     number_of_retries: usize,
+    request_timeout: Duration,
 }
 
 impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
@@ -49,6 +51,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
             events_channel_capacity: DEFAULT_EVENT_CHANNEL_CAPACITY,
             number_of_retries: DEFAULT_NUMBER_OF_REHANDSHAKE,
+            request_timeout: DEFAULT_CLIENT_TIMEOUT,
         }
     }
 
@@ -83,6 +86,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             commands_channel_capacity,
             events_channel_capacity,
             number_of_retries,
+            request_timeout,
         } = self;
 
         let handshake_endpoint =
@@ -125,6 +129,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies_string_cache,
             client_id,
             http_client,
+            request_timeout,
         };
 
         client_task::spawn(inner, cmd_rx, event_tx);
@@ -299,6 +304,14 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     #[must_use]
     pub const fn number_of_retries(mut self, number_of_retries: usize) -> Self {
         self.number_of_retries = number_of_retries;
+        self
+    }
+
+    /// Set number of retries for request which got `Retry` or `Handshake` advice.
+    #[inline(always)]
+    #[must_use]
+    pub const fn request_timeout(mut self, request_timeout: Duration) -> Self {
+        self.request_timeout = request_timeout;
         self
     }
 }

@@ -9,7 +9,10 @@ pub use builder::*;
 use crate::{ext::CookieJarExt, types::*, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use cookie::{Cookie, CookieJar};
-use core::sync::atomic::{AtomicUsize, Ordering};
+use core::{
+    sync::atomic::{AtomicUsize, Ordering},
+    time::Duration,
+};
 use hyper::{client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Client, HeaderMap, Uri};
 use serde::Serialize;
 use serde_json::json;
@@ -38,6 +41,7 @@ pub(crate) struct CometdClientInner {
     pub(crate) cookies_string_cache: ArcSwapOption<Box<str>>,
     client_id: ArcSwapOption<Box<str>>,
     pub(crate) http_client: Client<HttpConnector>,
+    pub(crate) request_timeout: Duration,
 }
 
 impl<Msg> CometdClient<Msg> {

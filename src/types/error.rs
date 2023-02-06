@@ -30,6 +30,8 @@ pub enum CometdError {
     InvalidUri(#[from] InvalidUri),
     #[error("Got request error at {0:?}: `{1}`.")]
     Request(ErrorKind, HyperError),
+    #[error("Got request timeout at {0:?}.")]
+    RequestTimeout(ErrorKind),
     /// Return if status code non ok (in range [200, 300)).
     /// Body will be empty if got error while fetching body.
     #[error("Got unsuccessful StatusCode error at {0:?}: `{1}`.")]

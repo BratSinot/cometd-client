@@ -8,6 +8,7 @@ use hyper::{
     Body, HeaderMap, StatusCode,
 };
 use serde::de::DeserializeOwned;
+use tokio::time::timeout;
 
 impl CometdClientInner {
     #[inline]
@@ -21,10 +22,9 @@ impl CometdClientInner {
             .body(body.into())
             .map_err(CometdError::unexpected)?;
 
-        let (parts, body) = self
-            .http_client
-            .request(request)
+        let (parts, body) = timeout(self.request_timeout, self.http_client.request(request))
             .await
+            .map_err(|_| CometdError::RequestTimeout(kind))?
             .map_err(|error| CometdError::Request(kind, error))?
             .into_parts();
         let Parts {
