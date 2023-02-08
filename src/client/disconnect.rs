@@ -1,5 +1,5 @@
 use crate::{
-    types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
+    types::{Advice, CometdError, CometdResult, ErrorKind, Message},
     CometdClientInner,
 };
 use serde_json::json;
