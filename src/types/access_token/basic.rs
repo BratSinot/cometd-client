@@ -2,6 +2,7 @@ use crate::types::{AccessToken, CometdError, CometdResult};
 use base64::{
     encoded_len, engine::general_purpose::STANDARD, write::EncoderWriter as Base64Writer,
 };
+use core::fmt::{Debug, Formatter};
 use std::io::Write;
 
 const BASIC: &[u8] = b"Basic ";
@@ -21,8 +22,13 @@ const BASIC: &[u8] = b"Basic ";
 /// # Result::<_, Box<dyn std::error::Error>>::Ok(())
 /// # };
 /// ```
-#[derive(Debug)]
 pub struct Basic(Box<str>);
+
+impl Debug for Basic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Bearer(****)")
+    }
+}
 
 impl Basic {
     /// Create `Basic` access token.

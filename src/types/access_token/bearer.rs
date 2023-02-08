@@ -1,5 +1,5 @@
 use crate::types::AccessToken;
-use core::fmt::Display;
+use core::fmt::{Debug, Display, Formatter};
 
 /// `Bearer` can be used as `AccessToken` for bearer authorization ('authorization: Bearer f0596451-af4d-40f4-a290-b5e8372c110b').
 ///
@@ -16,8 +16,13 @@ use core::fmt::Display;
 /// # Result::<_, Box<dyn std::error::Error>>::Ok(())
 /// # };
 /// ```
-#[derive(Debug)]
 pub struct Bearer(Box<str>);
+
+impl Debug for Bearer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Bearer(****)")
+    }
+}
 
 impl Bearer {
     /// Create `Bearer` access token.

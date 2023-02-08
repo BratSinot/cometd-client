@@ -149,10 +149,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # #[derive(serde::Deserialize)]
     /// # struct Data { msg: String, }
     ///
-    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///     let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
     ///         .handshake_base_path("hand/") // http://[::1]:1025/notifications/hand/handshake
     ///         .build()?;
-    /// # let app: CometdClient<Data> = app;
+    /// # let app: CometdClient<Data> = client;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -171,10 +171,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # #[derive(serde::Deserialize)]
     /// # struct Data { msg: String, }
     ///
-    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///     let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
     ///         .subscribe_base_path("sub/") // http://[::1]:1025/notifications/sub/
     ///         .build()?;
-    /// # let app: CometdClient<Data> = app;
+    /// # let app: CometdClient<Data> = client;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -192,10 +192,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
     /// # struct Data { msg: String, }
-    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///     let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
     ///         .connect_base_path("con/") // http://[::1]:1025/notifications/con/connect
     ///         .build()?;
-    /// # let app: CometdClient<Data> = app;
+    /// # let app: CometdClient<Data> = client;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -213,10 +213,10 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
     /// # struct Data { msg: String, }
-    ///     let app = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
+    ///     let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
     ///         .disconnect_base_path("con/") // http://[::1]:1025/notifications/discon/disconnect
     ///         .build()?;
-    /// # let app: CometdClient<Data> = app;
+    /// # let app: CometdClient<Data> = client;
     /// # Ok(()) };
     /// ```
     #[inline(always)]
@@ -242,7 +242,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         self
     }
 
-    /// Set `interval` option in handshake request.
+    /// Set `access token` option in handshake request.
     #[inline(always)]
     #[must_use]
     pub fn access_token(self, access_token: impl AccessToken) -> Self {
