@@ -2,7 +2,6 @@ use crate::types::{AccessToken, CometdError, CometdResult};
 use base64::{
     encoded_len, engine::general_purpose::STANDARD, write::EncoderWriter as Base64Writer,
 };
-use hyper::header::AUTHORIZATION;
 use std::io::Write;
 
 const BASIC: &[u8] = b"Basic ";
@@ -23,7 +22,7 @@ const BASIC: &[u8] = b"Basic ";
 /// # };
 /// ```
 #[derive(Debug)]
-pub struct Basic([(&'static str, Box<str>); 1]);
+pub struct Basic(Box<str>);
 
 impl Basic {
     /// Create `Basic` access token.
@@ -44,17 +43,16 @@ impl Basic {
         }
         drop(base64_writer);
 
-        Ok(Self([(
-            AUTHORIZATION.as_str(),
+        Ok(Self(
             String::from_utf8(basic)
                 .map_err(CometdError::unexpected)?
                 .into_boxed_str(),
-        )]))
+        ))
     }
 }
 
 impl AccessToken for Basic {
-    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_token(&self) -> &str {
         &self.0
     }
 }

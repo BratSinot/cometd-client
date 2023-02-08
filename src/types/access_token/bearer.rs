@@ -1,6 +1,5 @@
 use crate::types::AccessToken;
 use core::fmt::Display;
-use hyper::header::AUTHORIZATION;
 
 /// `Bearer` can be used as `AccessToken` for bearer authorization ('authorization: Bearer f0596451-af4d-40f4-a290-b5e8372c110b').
 ///
@@ -18,21 +17,18 @@ use hyper::header::AUTHORIZATION;
 /// # };
 /// ```
 #[derive(Debug)]
-pub struct Bearer([(&'static str, Box<str>); 1]);
+pub struct Bearer(Box<str>);
 
 impl Bearer {
     /// Create `Bearer` access token.
     #[inline(always)]
     pub fn new<T: Display>(token: T) -> Self {
-        Self([(
-            AUTHORIZATION.as_str(),
-            format!("Bearer {token}").into_boxed_str(),
-        )])
+        Self(format!("Bearer {token}").into_boxed_str())
     }
 }
 
 impl AccessToken for Bearer {
-    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_token(&self) -> &str {
         &self.0
     }
 }
