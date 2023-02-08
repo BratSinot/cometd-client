@@ -1,8 +1,7 @@
 use crate::{
-    types::{CometdError, CometdResult, ErrorKind, Reconnect},
+    types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
     CometdClientInner,
 };
-use hyper::StatusCode;
 use serde_json::json;
 
 impl CometdClientInner {
@@ -22,19 +21,24 @@ impl CometdClientInner {
 
         let request_builder = self.create_request_builder(&self.disconnect_endpoint);
 
-        let status_code = self
-            .send_request_response(request_builder, body, KIND)
-            .await?
-            .0;
+        let Message {
+            successful,
+            error,
+            advice,
+            ..
+        } = self
+            .send_request_and_parse_json_body::<[Message; 1]>(request_builder, body, KIND)
+            .await
+            .map(|[message]| message)?;
 
-        if status_code == StatusCode::BAD_REQUEST {
-            Ok(())
-        } else {
+        if successful == Some(false) {
             Err(CometdError::wrong_response(
                 KIND,
-                Reconnect::None,
-                format!("Unknown status code: {status_code}"),
+                Advice::reconnect(advice),
+                error.unwrap_or_default(),
             ))
+        } else {
+            Ok(())
         }
     }
 }
