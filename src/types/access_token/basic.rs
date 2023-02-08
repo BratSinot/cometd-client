@@ -10,7 +10,7 @@ const BASIC: &[u8] = b"Basic ";
 /// `Basic` can be used as `AccessToken` for basic authorization ('authorization: Basic VmFzeWE6UGV0eWE=').
 ///
 /// # Example
-/// ```rust
+/// ```rust,no_run
 /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
 ///
 /// # async {

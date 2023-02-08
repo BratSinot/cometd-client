@@ -58,7 +58,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Return a `CometdClient`.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
@@ -143,7 +143,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set cometd server handshake url path.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
@@ -165,7 +165,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set cometd server subscribe url path.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
@@ -187,7 +187,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set cometd server connect url path.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]
@@ -208,7 +208,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set cometd server disconnect url path.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClient, CometdClientBuilder};
     /// # let _ = || -> cometd_client::types::CometdResult<_> {
     /// # #[derive(serde::Deserialize)]

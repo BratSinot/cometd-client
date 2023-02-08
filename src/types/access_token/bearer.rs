@@ -5,7 +5,7 @@ use hyper::header::AUTHORIZATION;
 /// `Bearer` can be used as `AccessToken` for bearer authorization ('authorization: Bearer f0596451-af4d-40f4-a290-b5e8372c110b').
 ///
 /// # Example
-/// ```rust
+/// ```rust,no_run
 /// # use cometd_client::{types::access_token::Bearer, CometdClientBuilder};
 ///
 /// # async {

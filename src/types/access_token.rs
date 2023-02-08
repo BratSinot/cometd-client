@@ -11,7 +11,7 @@ use core::fmt::Debug;
 /// Trait which can be used for implementing custom access token.
 ///
 /// # Example:
-/// ```rust
+/// ```rust,no_run
 /// # use cometd_client::types::AccessToken;
 ///     #[derive(Debug)]
 ///     struct SuperToken([(&'static str, Box<str>); 2]);

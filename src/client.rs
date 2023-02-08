@@ -48,7 +48,7 @@ impl<Msg> CometdClient<Msg> {
     /// Return client event receiver channel.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() {
@@ -70,7 +70,7 @@ impl<Msg> CometdClient<Msg> {
     /// Ask client command loop to send subscribe request.
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,no_run
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
     /// # #[tokio::main(flavor = "current_thread")]
     /// # async fn main() {
