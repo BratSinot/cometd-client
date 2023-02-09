@@ -1,23 +1,11 @@
 use crate::{
     types::{Advice, CometdError, CometdResult, ErrorKind, Message},
-    CometdClient,
+    CometdClientInner,
 };
 use serde_json::json;
 
-impl CometdClient {
-    /// Send disconnect request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     client.disconnect().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn disconnect(&self) -> CometdResult<()> {
+impl CometdClientInner {
+    pub(crate) async fn disconnect(&self) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Disconnect;
 
         let client_id = self
@@ -27,7 +15,7 @@ impl CometdClient {
         let body = json!([{
           "id": self.next_id(),
           "channel": "/meta/disconnect",
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 

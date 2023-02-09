@@ -1,27 +1,11 @@
 use crate::{
     types::{Advice, CometdError, CometdResult, ErrorKind, Message},
-    CometdClient,
+    CometdClientInner,
 };
-use serde::Serialize;
-use serde_json::json;
+use serde_json::{json, Value as JsonValue};
 
-impl CometdClient {
-    /// Send handshake request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     client.subscribe(&["/topic0", "/topic1"]).await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn subscribe(
-        &self,
-        subscriptions: &[impl Serialize + Send + Sync],
-    ) -> CometdResult<()> {
+impl CometdClientInner {
+    pub(crate) async fn subscribe(&self, subscriptions: &JsonValue) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Subscribe;
 
         let client_id = self
@@ -32,7 +16,7 @@ impl CometdClient {
           "id": self.next_id(),
           "channel": "/meta/subscribe",
           "subscription": subscriptions,
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 

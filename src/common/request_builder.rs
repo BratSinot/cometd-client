@@ -1,12 +1,11 @@
-use crate::{consts::APPLICATION_JSON, types::AccessToken, CometdClient};
+use crate::{consts::APPLICATION_JSON, types::AccessToken, CometdClientInner};
 use hyper::{
-    header::{CONTENT_TYPE, COOKIE},
+    header::{AUTHORIZATION, CONTENT_TYPE, COOKIE},
     http::request::Builder,
     Method, Request, Uri,
 };
-use std::sync::Arc;
 
-impl CometdClient {
+impl CometdClientInner {
     #[inline]
     pub(crate) fn create_request_builder(&self, uri: &Uri) -> Builder {
         let mut ret = Request::builder()
@@ -14,22 +13,20 @@ impl CometdClient {
             .method(Method::POST)
             .header(CONTENT_TYPE, APPLICATION_JSON);
 
-        // set authorization headers
-        #[allow(clippy::pattern_type_mismatch)]
-        for (header, value) in self
+        // set authorization header
+        if let Some(token) = self
             .access_token
             .load()
-            .iter()
-            .map(Arc::as_ref)
+            .as_deref()
             .map(Box::as_ref)
-            .flat_map(AccessToken::get_authorization_header)
+            .map(AccessToken::get_authorization_token)
         {
-            ret = ret.header(*header, &**value);
+            ret = ret.header(AUTHORIZATION, token);
         }
 
         // set cookies
-        if let Some(cookies) = self.cookies_string_cache.load().as_deref() {
-            ret = ret.header(COOKIE, cookies.as_ref());
+        if let Some(cookies) = self.cookies_string_cache.load().as_deref().map(Box::as_ref) {
+            ret = ret.header(COOKIE, cookies);
         }
 
         ret

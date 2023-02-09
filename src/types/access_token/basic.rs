@@ -2,7 +2,7 @@ use crate::types::{AccessToken, CometdError, CometdResult};
 use base64::{
     encoded_len, engine::general_purpose::STANDARD, write::EncoderWriter as Base64Writer,
 };
-use hyper::header::AUTHORIZATION;
+use core::fmt::{Debug, Formatter};
 use std::io::Write;
 
 const BASIC: &[u8] = b"Basic ";
@@ -10,15 +10,25 @@ const BASIC: &[u8] = b"Basic ";
 /// `Basic` can be used as `AccessToken` for basic authorization ('authorization: Basic VmFzeWE6UGV0eWE=').
 ///
 /// # Example
-/// ```rust
+/// ```rust,no_run
 /// # use cometd_client::{types::access_token::Basic, CometdClientBuilder};
-/// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
 ///
-///     let access_token = Basic::create("username", Some("password")).unwrap();
-///     client.update_access_token(access_token);
+/// # async {
+///     let access_token = Basic::create("username", Some("password"))?;
+///
+///     let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse()?)
+///         .access_token(access_token)
+///         .build::<()>()?;
+/// # Result::<_, Box<dyn std::error::Error>>::Ok(())
+/// # };
 /// ```
-#[derive(Debug)]
-pub struct Basic([(&'static str, Box<str>); 1]);
+pub struct Basic(Box<str>);
+
+impl Debug for Basic {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Basic(****)")
+    }
+}
 
 impl Basic {
     /// Create `Basic` access token.
@@ -39,17 +49,16 @@ impl Basic {
         }
         drop(base64_writer);
 
-        Ok(Self([(
-            AUTHORIZATION.as_str(),
-            String::from_utf8(basic)
-                .map_err(CometdError::unexpected)?
-                .into_boxed_str(),
-        )]))
+        let ret = String::from_utf8(basic)
+            .map_err(CometdError::unexpected)?
+            .into_boxed_str();
+
+        Ok(Self(ret))
     }
 }
 
 impl AccessToken for Basic {
-    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_token(&self) -> &str {
         &self.0
     }
 }

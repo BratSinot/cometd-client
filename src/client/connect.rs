@@ -1,25 +1,13 @@
-use crate::types::Reconnect;
 use crate::{
-    types::{Advice, CometdError, CometdResult, Data, ErrorKind, Message},
-    CometdClient,
+    types::{Advice, CometdError, CometdResult, Data, ErrorKind, Message, Reconnect},
+    CometdClientInner,
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
+use std::sync::Arc;
 
-impl CometdClient {
-    /// Send connect request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     let data = client.connect::<serde_json::Value>().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn connect<Msg>(&self) -> CometdResult<Vec<Data<Msg>>>
+impl CometdClientInner {
+    pub(crate) async fn connect<Msg>(&self) -> CometdResult<Arc<[Data<Msg>]>>
     where
         Msg: DeserializeOwned,
     {
@@ -34,7 +22,7 @@ impl CometdClient {
           "id": id,
           "channel": "/meta/connect",
           "connectionType": "long-polling",
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 
@@ -73,7 +61,7 @@ impl CometdClient {
 
                         Ok::<_, CometdError>(Data { channel, message })
                     })
-                    .collect::<CometdResult<Vec<_>>>()?;
+                    .collect::<CometdResult<_>>()?;
 
                 Ok(data)
             }

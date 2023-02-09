@@ -30,6 +30,8 @@ pub enum CometdError {
     InvalidUri(#[from] InvalidUri),
     #[error("Got request error at {0:?}: `{1}`.")]
     Request(ErrorKind, HyperError),
+    #[error("Got request timeout at {0:?}.")]
+    RequestTimeout(ErrorKind),
     /// Return if status code non ok (in range [200, 300)).
     /// Body will be empty if got error while fetching body.
     #[error("Got unsuccessful StatusCode error at {0:?}: `{1}`.")]
@@ -38,12 +40,12 @@ pub enum CometdError {
     FetchBody(ErrorKind, HyperError),
     #[error("Got parsing body error at {0:?}: `{1}`.")]
     ParseBody(ErrorKind, JsonError),
-    #[error("Got wring response at {0:?}: `{2}`")]
+    #[error("Got wrong response at {0:?}: `{2}`")]
     WrongResponse(ErrorKind, Reconnect, Cow<'static, str>),
     #[error("Make handshake before {0:?} request.")]
     MissingClientId(ErrorKind),
     #[error("Got unexpected error: `{0}`")]
-    UnexpectedError(Box<dyn Error + Sync + Send + 'static>),
+    Unexpected(Box<dyn Error + Sync + Send + 'static>),
 }
 
 impl CometdError {
@@ -57,6 +59,6 @@ impl CometdError {
 
     #[inline(always)]
     pub(crate) fn unexpected<E: Error + Sync + Send + 'static>(error: E) -> Self {
-        Self::UnexpectedError(Box::from(error))
+        Self::Unexpected(Box::from(error))
     }
 }

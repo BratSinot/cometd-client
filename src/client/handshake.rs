@@ -1,23 +1,11 @@
 use crate::{
     types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
-    ArcSwapOptionExt, CometdClient,
+    ArcSwapOptionExt, CometdClientInner,
 };
 use serde_json::json;
 
-impl CometdClient {
-    /// Send handshake request.
-    ///
-    /// # Example
-    /// ```rust
-    /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
-    ///
-    /// # async {
-    ///     client.handshake().await?;
-    /// #   CometdResult::Ok(())
-    /// # };
-    /// ```
-    pub async fn handshake(&self) -> CometdResult<()> {
+impl CometdClientInner {
+    pub(crate) async fn handshake(&self) -> CometdResult<()> {
         const KIND: ErrorKind = ErrorKind::Handshake;
 
         let body = json!([{

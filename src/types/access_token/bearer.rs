@@ -1,33 +1,39 @@
 use crate::types::AccessToken;
-use core::fmt::Display;
-use hyper::header::AUTHORIZATION;
+use core::fmt::{Debug, Display, Formatter};
 
 /// `Bearer` can be used as `AccessToken` for bearer authorization ('authorization: Bearer f0596451-af4d-40f4-a290-b5e8372c110b').
 ///
 /// # Example
-/// ```rust
+/// ```rust,no_run
 /// # use cometd_client::{types::access_token::Bearer, CometdClientBuilder};
-/// # let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build().unwrap();
 ///
+/// # async {
 ///     let access_token = Bearer::new("f0596451-af4d-40f4-a290-b5e8372c110b");
-///     client.update_access_token(access_token);
+///
+///     let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse()?)
+///         .access_token(access_token)
+///         .build::<()>()?;
+/// # Result::<_, Box<dyn std::error::Error>>::Ok(())
+/// # };
 /// ```
-#[derive(Debug)]
-pub struct Bearer([(&'static str, Box<str>); 1]);
+pub struct Bearer(Box<str>);
+
+impl Debug for Bearer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        write!(f, "Bearer(****)")
+    }
+}
 
 impl Bearer {
     /// Create `Bearer` access token.
     #[inline(always)]
     pub fn new<T: Display>(token: T) -> Self {
-        Self([(
-            AUTHORIZATION.as_str(),
-            format!("Bearer {token}").into_boxed_str(),
-        )])
+        Self(format!("Bearer {token}").into_boxed_str())
     }
 }
 
 impl AccessToken for Bearer {
-    fn get_authorization_header(&self) -> &[(&'static str, Box<str>)] {
+    fn get_authorization_token(&self) -> &str {
         &self.0
     }
 }
