@@ -25,7 +25,7 @@ const BASIC: &[u8] = b"Basic ";
 pub struct Basic(Box<str>);
 
 impl Debug for Basic {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "Bearer(****)")
     }
 }

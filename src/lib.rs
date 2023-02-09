@@ -57,6 +57,7 @@
 //! let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
 //!     .handshake_base_path("hand/")
 //!     .build()?;
+//! # let _client: cometd_client::CometdClient<()> = client;
 //! # Ok(())
 //! # };
 //! ```
@@ -84,6 +85,7 @@
 //! let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
 //!     .access_token(access_token)
 //!     .build()?;
+//! # let _client: cometd_client::CometdClient<()> = client;
 //! # Ok(())
 //! # };
 //! ```
@@ -121,7 +123,7 @@
 //! ```rust,no_run
 //! use cometd_client::CometdClientBuilder;
 //!
-//! # || -> Result<(), Box<dyn std::error::Error>> {//!
+//! # || -> Result<(), Box<dyn std::error::Error>> {
 //! let client = CometdClientBuilder::new(&"http://[::1]:1025/notifications/".parse()?)
 //!     .cookie("cookie0-name", "cookie0-value")
 //!     .cookies([
@@ -129,6 +131,7 @@
 //!         ("cookie2-name", "cookie2-value")
 //!     ])
 //!     .build()?;
+//! # let _client: cometd_client::CometdClient<()> = client;
 //! # Ok(())
 //! # };
 //! ```
@@ -152,17 +155,18 @@
 //!
 //! To get event channel receiver use [`CometdClient::rx`].
 //!
-//! ```rust
+//! ```rust,no_run
 //! use cometd_client::{types::CometdClientEvent, CometdClientBuilder};
 //!
 //! # async fn _test() -> Result<(), Box<dyn std::error::Error>> {
 //! let client = CometdClientBuilder::new(&"http://[::0]:1025/notifications/".parse()?)
 //!     .build()?;
+//! # let client: cometd_client::CometdClient<()> = client;
 //!
 //! let mut rx = client.rx();
 //!
 //! tokio::spawn(async move {
-//!     while let Ok(event) = rx.recv().await {
+//!     while let Some(event) = rx.recv().await {
 //!         match event {
 //!             CometdClientEvent::Message(messages) => println!("got messages: `{messages:?}`."),
 //!             CometdClientEvent::Error(error) => eprintln!("got error: `{error:?}`."),   

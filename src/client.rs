@@ -57,14 +57,14 @@ impl<Msg> CometdClient<Msg> {
     ///     
     ///     client.subscribe(&["/topic0"]).await;
     ///
-    ///     while let Ok(event) = event_rx.recv().await {
+    ///     while let Some(event) = event_rx.recv().await {
     ///         println!("Got cometd client event: `{event:?}`.");
     ///     }
     /// # }
     /// ```
     #[inline(always)]
-    pub fn rx(&self) -> EventReceiver<Msg> {
-        self.inactive_event_rx.activate_cloned()
+    pub fn rx(&self) -> CometdEventReceiver<Msg> {
+        CometdEventReceiver(self.inactive_event_rx.activate_cloned())
     }
 
     /// Ask client command loop to send subscribe request.
