@@ -50,8 +50,7 @@ impl<Msg> CometdClient<Msg> {
     /// # Example
     /// ```rust,no_run
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # #[tokio::main(flavor = "current_thread")]
-    /// # async fn main() {
+    /// # async fn _fun() {
     /// #   let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build::<()>().unwrap();
     ///     let mut event_rx = client.rx();
     ///     
@@ -72,8 +71,7 @@ impl<Msg> CometdClient<Msg> {
     /// # Example
     /// ```rust,no_run
     /// # use cometd_client::{CometdClientBuilder, types::CometdResult};
-    /// # #[tokio::main(flavor = "current_thread")]
-    /// # async fn main() {
+    /// # async fn _fun() {
     /// #   let client = CometdClientBuilder::new(&"http://[::1]:1025/".parse().unwrap()).build::<()>().unwrap();
     ///     client.subscribe(&["/topic0", "/topic1"]).await;
     /// # }
