@@ -13,8 +13,7 @@ async fn main() {
     client.subscribe(&["/topic0", "/topic1"]).await;
 
     for _ in 0..3 {
-        let response = rx.recv().await;
-        assert!(response.is_ok());
+        let response = rx.recv().await.unwrap();
         println!("response: `{response:?}`.");
     }
 
