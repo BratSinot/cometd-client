@@ -22,7 +22,7 @@ impl CometdClientInner {
           "id": id,
           "channel": "/meta/connect",
           "connectionType": "long-polling",
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 

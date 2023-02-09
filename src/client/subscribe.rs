@@ -16,7 +16,7 @@ impl CometdClientInner {
           "id": self.next_id(),
           "channel": "/meta/subscribe",
           "subscription": subscriptions,
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 

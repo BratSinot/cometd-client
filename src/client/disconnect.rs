@@ -15,7 +15,7 @@ impl CometdClientInner {
         let body = json!([{
           "id": self.next_id(),
           "channel": "/meta/disconnect",
-          "clientId": client_id
+          "clientId": *client_id
         }])
         .to_string();
 

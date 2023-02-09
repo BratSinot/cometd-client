@@ -26,7 +26,7 @@ pub struct Basic(Box<str>);
 
 impl Debug for Basic {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
-        write!(f, "Bearer(****)")
+        write!(f, "Basic(****)")
     }
 }
 
@@ -49,11 +49,11 @@ impl Basic {
         }
         drop(base64_writer);
 
-        Ok(Self(
-            String::from_utf8(basic)
-                .map_err(CometdError::unexpected)?
-                .into_boxed_str(),
-        ))
+        let ret = String::from_utf8(basic)
+            .map_err(CometdError::unexpected)?
+            .into_boxed_str();
+
+        Ok(Self(ret))
     }
 }
 
