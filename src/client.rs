@@ -31,8 +31,8 @@ pub(crate) struct CometdClientInner {
     subscribe_endpoint: Uri,
     connect_endpoint: Uri,
     disconnect_endpoint: Uri,
-    timeout_ms: u64,
-    interval_ms: u64,
+    timeout: Duration,
+    interval: Duration,
     number_of_retries: usize,
 
     id: AtomicUsize,

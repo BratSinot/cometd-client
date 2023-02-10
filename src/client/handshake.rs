@@ -15,8 +15,8 @@ impl CometdClientInner {
           "channel": "/meta/handshake",
           "supportedConnectionTypes": [ "long-polling" ],
           "advice": {
-            "timeout": self.timeout_ms,
-            "interval": self.interval_ms,
+            "timeout": self.timeout.as_millis(),
+            "interval": self.interval.as_millis(),
           }
         }])
         .to_string();

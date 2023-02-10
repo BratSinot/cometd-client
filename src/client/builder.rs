@@ -24,8 +24,8 @@ pub struct CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     subscribe_base_path: &'c str,
     connect_base_path: &'d str,
     disconnect_base_path: &'e str,
-    timeout_ms: Option<u64>,
-    interval_ms: Option<u64>,
+    timeout: Option<Duration>,
+    interval: Option<Duration>,
     access_token: Option<Box<dyn AccessToken>>,
     cookies: Option<CookieJar>,
     commands_channel_capacity: usize,
@@ -44,8 +44,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             subscribe_base_path: "",
             connect_base_path: "",
             disconnect_base_path: "",
-            timeout_ms: None,
-            interval_ms: None,
+            timeout: None,
+            interval: None,
             access_token: None,
             cookies: None,
             commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
@@ -79,8 +79,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             subscribe_base_path,
             connect_base_path,
             disconnect_base_path,
-            timeout_ms,
-            interval_ms,
+            timeout,
+            interval,
             access_token,
             cookies,
             commands_channel_capacity,
@@ -96,8 +96,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             String::from(base_url.join(connect_base_path)?.join("connect")?).try_into()?;
         let disconnect_endpoint =
             String::from(base_url.join(disconnect_base_path)?.join("disconnect")?).try_into()?;
-        let timeout_ms = timeout_ms.unwrap_or(DEFAULT_TIMEOUT_MS);
-        let interval_ms = interval_ms.unwrap_or(DEFAULT_INTERVAL_MS);
+        let timeout = timeout.unwrap_or(DEFAULT_TIMEOUT_MS);
+        let interval = interval.unwrap_or(DEFAULT_INTERVAL_MS);
         let id = Default::default();
         let access_token = access_token
             .map(ArcSwapOption::from_pointee)
@@ -120,8 +120,8 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             subscribe_endpoint,
             connect_endpoint,
             disconnect_endpoint,
-            timeout_ms,
-            interval_ms,
+            timeout,
+            interval,
             number_of_retries,
             id,
             access_token,
@@ -229,16 +229,16 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set `timeout` option in handshake request.
     #[inline(always)]
     #[must_use]
-    pub const fn timeout_ms(mut self, timeout_ms: u64) -> Self {
-        self.timeout_ms = Some(timeout_ms);
+    pub const fn timeout_ms(mut self, timeout: Duration) -> Self {
+        self.timeout = Some(timeout);
         self
     }
 
     /// Set `interval` option in handshake request.
     #[inline(always)]
     #[must_use]
-    pub const fn interval_ms(mut self, interval_ms: u64) -> Self {
-        self.interval_ms = Some(interval_ms);
+    pub const fn interval_ms(mut self, interval: Duration) -> Self {
+        self.interval = Some(interval);
         self
     }
 
