@@ -229,7 +229,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set `timeout` option in handshake request.
     #[inline(always)]
     #[must_use]
-    pub const fn timeout_ms(mut self, timeout: Duration) -> Self {
+    pub const fn timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
     }
@@ -237,7 +237,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
     /// Set `interval` option in handshake request.
     #[inline(always)]
     #[must_use]
-    pub const fn interval_ms(mut self, interval: Duration) -> Self {
+    pub const fn interval(mut self, interval: Duration) -> Self {
         self.interval = Some(interval);
         self
     }
