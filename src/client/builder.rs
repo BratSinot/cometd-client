@@ -299,7 +299,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         self
     }
 
-    /// Set number of retries for request which got `Retry` or `Handshake` advice.
+    /// Set number of retries for requests.
     #[inline(always)]
     #[must_use]
     pub const fn number_of_retries(mut self, number_of_retries: usize) -> Self {
@@ -307,7 +307,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
         self
     }
 
-    /// Set number of retries for request which got `Retry` or `Handshake` advice.
+    /// Set requests timeout.
     #[inline(always)]
     #[must_use]
     pub const fn request_timeout(mut self, request_timeout: Duration) -> Self {
