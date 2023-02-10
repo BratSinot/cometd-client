@@ -50,7 +50,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             cookies: None,
             commands_channel_capacity: DEFAULT_COMMAND_CHANNEL_CAPACITY,
             events_channel_capacity: DEFAULT_EVENT_CHANNEL_CAPACITY,
-            number_of_retries: DEFAULT_NUMBER_OF_REHANDSHAKE,
+            number_of_retries: DEFAULT_NUMBER_OF_RETRIES,
             request_timeout: DEFAULT_CLIENT_TIMEOUT,
         }
     }
