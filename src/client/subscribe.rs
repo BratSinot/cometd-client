@@ -27,8 +27,9 @@ impl CometdClientInner {
             advice,
             ..
         } = self
-            .send_request_and_parse_json_body::<[Message; 1]>(request_builder, body, KIND)
+            .send_request_and_parse_json_body::<Box<[Message; 1]>>(request_builder, body, KIND)
             .await
+            .map(|message| *message)
             .map(|[message]| message)?;
 
         if successful == Some(false) {
