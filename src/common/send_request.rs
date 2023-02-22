@@ -46,7 +46,7 @@ impl CometdClientInner {
             .await?;
         let body = to_bytes(body).await.map(Vec::from);
 
-        self.extract_and_store_cookie(&headers).await;
+        self.extract_and_store_cookie(&headers);
 
         if status.is_success() {
             let raw_body = body.map_err(|error| CometdError::FetchBody(kind, error))?;

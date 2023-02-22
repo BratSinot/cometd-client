@@ -16,7 +16,7 @@ use core::{
 use hyper::{client::HttpConnector, header::SET_COOKIE, http::HeaderValue, Client, HeaderMap, Uri};
 use serde::Serialize;
 use serde_json::json;
-use tokio::sync::RwLock;
+use std::sync::{Mutex, PoisonError};
 
 /// A cometd Client.
 #[derive(Debug)]
@@ -37,7 +37,7 @@ pub(crate) struct CometdClientInner {
 
     id: AtomicUsize,
     pub(crate) access_token: ArcSwapOption<Box<dyn AccessToken>>,
-    cookies: RwLock<CookieJar>,
+    cookies: Mutex<CookieJar>,
     pub(crate) cookies_string_cache: ArcSwapOption<Box<str>>,
     client_id: ArcSwapOption<Box<str>>,
     pub(crate) http_client: Client<HttpConnector>,
@@ -92,16 +92,16 @@ impl CometdClientInner {
     }
 
     #[inline]
-    pub(crate) async fn extract_and_store_cookie(&self, headers: &HeaderMap) {
+    pub(crate) fn extract_and_store_cookie(&self, headers: &HeaderMap) {
         let mut redo_cache = false;
 
-        let mut cookies = self.cookies.write().await;
+        let mut cookies = self.cookies.lock().unwrap_or_else(PoisonError::into_inner);
         for cookie in headers
             .get_all(SET_COOKIE)
-            .iter()
+            .into_iter()
             .map(HeaderValue::to_str)
             .filter_map(Result::ok)
-            .map(str::to_string)
+            .map(str::to_owned)
             .map(Cookie::parse)
             .filter_map(Result::ok)
         {
