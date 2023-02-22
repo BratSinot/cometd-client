@@ -12,8 +12,8 @@ use cookie::{Cookie, CookieJar};
 use core::time::Duration;
 use hyper::Client;
 use serde::de::DeserializeOwned;
-use std::borrow::Cow;
-use tokio::sync::{mpsc, RwLock};
+use std::{borrow::Cow, sync::Mutex};
+use tokio::sync::mpsc;
 use url::Url;
 
 /// A builder to construct `CometdClient`.
@@ -125,7 +125,7 @@ impl<'a, 'b, 'c, 'd, 'e> CometdClientBuilder<'a, 'b, 'c, 'd, 'e> {
             number_of_retries,
             id,
             access_token,
-            cookies: RwLock::new(cookies),
+            cookies: Mutex::new(cookies),
             cookies_string_cache,
             client_id,
             http_client,
