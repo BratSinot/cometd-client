@@ -6,7 +6,7 @@ mod subscribe;
 
 pub use builder::*;
 
-use crate::{ext::CookieJarExt, types::*, ArcSwapOptionExt};
+use crate::{ext::CookieJarExt as _, types::*, ArcSwapOptionExt};
 use arc_swap::ArcSwapOption;
 use cookie::{Cookie, CookieJar};
 use core::{
