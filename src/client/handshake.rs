@@ -1,6 +1,6 @@
 use crate::{
     types::{Advice, CometdError, CometdResult, ErrorKind, Message, Reconnect},
-    ArcSwapOptionExt, CometdClientInner,
+    ArcSwapOptionExt as _, CometdClientInner,
 };
 use serde_json::json;
 
